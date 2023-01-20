@@ -1,0 +1,366 @@
+package frc.robot.subsystems;
+
+import com.kauailabs.navx.frc.AHRS;
+
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.SerialPort.Port;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Constants;
+import frc.robot.SwerveModule;
+import frc.robot.Constants.*;
+import frc.robot.utils.maths.oneDimensionalLookup;
+
+public class Drivetrain implements Subsystem {
+  
+    public static final double MAX_VOLTAGE = 12.0;
+  
+    public static final double MAX_VELOCITY_METERS_PER_SECOND = 10;
+ 
+    public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = Constants.DRIVE.MAX_ROTATE_SPEED_RAD_PER_SEC_EST;
+
+    // Actually have no clue what these do. Have too much of a dog brain for this
+    public static final double[] XY_Axis_inputBreakpoints = {-1, -0.85, -0.6, -0.12, 0.12, 0.6, 0.85, 1};
+    public static final double[] XY_Axis_outputTable = {-1.0, -0.6, -0.3, 0, 0, 0.3, 0.6, 1.0};
+    public static final double[] RotAxis_inputBreakpoints = {-1, -0.9, -0.6, -0.12, 0.12, 0.6, 0.9, 1};
+    public static final double[] RotAxis_outputTable = {-1.0, -0.5, -0.2, 0, 0, 0.2, 0.5, 1.0};
+
+    private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
+        // Front left
+        new Translation2d(Constants.DRIVE.TRACKWIDTH_METERS / 2.0, Constants.DRIVE.WHEELBASE_METERS / 2.0),
+        // Front right
+        new Translation2d(Constants.DRIVE.TRACKWIDTH_METERS / 2.0, -Constants.DRIVE.WHEELBASE_METERS / 2.0),
+        // Back left
+        new Translation2d(-Constants.DRIVE.TRACKWIDTH_METERS / 2.0, Constants.DRIVE.WHEELBASE_METERS / 2.0),
+        // Back right
+        new Translation2d(-Constants.DRIVE.TRACKWIDTH_METERS / 2.0, -Constants.DRIVE.WHEELBASE_METERS / 2.0)
+    );
+
+ 
+    private final AHRS ahrs;
+    private double gyroOffset;
+
+    private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
+
+    private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(m_kinematics, Rotation2d.fromDegrees(0.0), null);
+
+    private SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
+
+    private enum SystemState{
+        IDLE,   
+        MANUAL_CONTROL,           //X,Y axis speeds relative to field
+    }
+
+    public enum WantedState{
+        IDLE,
+        MANUAL_CONTROL
+    }
+
+    private static class PeriodicIO {
+        // INPUTS
+        double timestamp;
+
+        double VxCmd; //longitudinal speed
+        double VyCmd; //lateral speed
+        double WzCmd; //rotational rate in radians/sec
+        boolean robotOrientedModifier; //drive command modifier to set robot oriented translation control
+
+        double limelightAngleError;
+        double limelightDistance;
+
+        double yawRateMeasured;
+        double adjustedYaw;
+
+        double chassisVx;
+        double chassisVy;
+        double goalVx;
+        double goalVy;
+
+        // OUTPUTS
+        SwerveModuleState[] swerveStatesOut;
+    }
+
+    private static class StateVariables {
+        double frontLeftDriveLast;
+        double frontLeftAngleLast;
+        double frontRightDriveLast;
+        double frontRightAngleLast;
+        double rearLeftDriveLast;
+        double rearLeftAngleLast;
+        double rearRightDriveLast;
+        double rearRightAngleLast;
+    }
+
+    private final PeriodicIO periodicIO = new PeriodicIO();
+    private final StateVariables stateVariables = new StateVariables();
+
+    private SystemState currentState = SystemState.MANUAL_CONTROL;
+    private WantedState wantedState = WantedState.MANUAL_CONTROL;
+
+    private final XboxController controller;
+
+    private double currentStateStartTime;
+
+    private double[] autoDriveSpeeds = new double[2];
+    public SwerveModule[] mSwerveMods;   
+
+    public Drivetrain(XboxController controller) {
+        ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
+        //yawCtrl.enableContinuousInput(-Math.PI, Math.PI);  //TODO check if Pigeon output rolls over 
+
+
+        this.controller = controller;
+
+        ahrs = new AHRS(Port.kMXP); 
+        
+        mSwerveMods = new SwerveModule[] {
+            new SwerveModule(0, Constants.Swerve.Mod0.constants),
+            new SwerveModule(1, Constants.Swerve.Mod1.constants),
+            new SwerveModule(2, Constants.Swerve.Mod2.constants),
+            new SwerveModule(3, Constants.Swerve.Mod3.constants)
+        };
+
+        //TODO TEMPORARY
+        resetOdometry();
+    }
+
+    @Override
+    public void processLoop(double timestamp) {
+        SystemState newState;
+        switch (currentState){
+            default:
+            case MANUAL_CONTROL:
+                newState = handleManualControl();
+                break;
+            case IDLE:
+                newState = handleManualControl();
+                break;
+      
+        }
+        if (newState != currentState) {
+			currentState = newState;
+			currentStateStartTime = timestamp;
+		}
+        updateOdometry();
+    }
+
+    @Override
+    public void readPeriodicInputs(double timestamp) {
+        periodicIO.VxCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.VyCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
+        periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
+
+        double[] chassisVelocity = chassisSpeedsGetter();
+        periodicIO.chassisVx = chassisVelocity[0];
+        periodicIO.chassisVy = chassisVelocity[1];
+        periodicIO.goalVx = chassisVelocity[2];
+        periodicIO.goalVy = chassisVelocity[3];
+
+    }
+
+    private double[] chassisSpeedsGetter(){
+        double[] speeds = new double[4];
+        int i = 0;
+        for (SwerveModule m : mSwerveMods){
+            speeds[i] = m.getState().speedMetersPerSecond;
+            i++;
+        }
+        return speeds;
+    }
+
+    @Override
+    public void writePeriodicOutputs(double timestamp)
+    {
+        SwerveModuleState[] moduleStates = new SwerveModuleState[4];
+        switch(currentState){
+            case MANUAL_CONTROL:
+                moduleStates = drive(periodicIO.VxCmd, periodicIO.VyCmd, periodicIO.WzCmd, !periodicIO.robotOrientedModifier);
+                break;
+            default:
+            case IDLE:
+                moduleStates = drive(0.0, 0.0, 0.0, true);
+                break;
+
+        }
+        setModuleStates(moduleStates);
+        updateStateVariables(moduleStates);
+    }
+
+    /*@Override
+    public void periodic() {
+        updateOdometry();
+    }*/
+
+    private SystemState defaultStateChange() {
+		switch (wantedState){
+            /*case IDLE:
+                return SystemState.IDLE;*/
+            default:
+            case MANUAL_CONTROL:
+                return SystemState.MANUAL_CONTROL;
+		}
+	}
+
+    private void updateStateVariables(SwerveModuleState[] states)
+    {
+        stateVariables.frontLeftDriveLast = states[0].speedMetersPerSecond;
+        stateVariables.frontRightDriveLast = states[1].speedMetersPerSecond;
+        stateVariables.rearLeftDriveLast = states[2].speedMetersPerSecond;
+        stateVariables.rearRightDriveLast = states[3].speedMetersPerSecond;
+
+        stateVariables.frontLeftAngleLast = states[0].angle.getRadians();
+        stateVariables.frontRightAngleLast = states[1].angle.getRadians();
+        stateVariables.rearLeftAngleLast = states[2].angle.getRadians();
+        stateVariables.rearRightAngleLast = states[3].angle.getRadians();
+    }
+
+    @Override
+    public void zeroSensors(){
+        resetOdometry();
+        setModuleStates(drive(0.0, 0.0, 0.0, true));
+    }
+
+    @Override
+    public void stop(){
+        setModuleStates(drive(0.0, 0.0, 0.0, true));
+    }
+
+    @Override
+    public String getId() {
+        return "Drivetrain";
+    }
+
+    @Override
+    public void outputTelemetry(double timestamp) {
+        SmartDashboard.putString("drivetrain/wantedStateAPI", this.wantedState.toString());
+        SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
+        SmartDashboard.putString("drivetrain/pose",odometry.getPoseMeters().toString());
+        SmartDashboard.putString("drivetrain/currentState", currentState.toString());
+        SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
+        SmartDashboard.putNumber("drivetrain/VxCmd", periodicIO.VxCmd);
+        SmartDashboard.putNumber("drivetrain/VyCmd", periodicIO.VyCmd);
+        SmartDashboard.putNumber("drivetrain/WzCmd", periodicIO.WzCmd);
+        SmartDashboard.putNumber("driverController/LeftY", controller.getLeftY());
+        SmartDashboard.putNumber("driverController/LeftX", controller.getLeftX());
+        SmartDashboard.putNumber("driverController/RightX", controller.getRightX());
+        SmartDashboard.putString("drivetrain/currentStateOutputs", currentState.toString());
+        SmartDashboard.putString("drivetrain/wantedStateOutputs", wantedState.toString());
+        SmartDashboard.putNumber("drivetrain/goalLimelightAngleError", periodicIO.limelightAngleError);
+        SmartDashboard.putNumber("drivetrain/yawAngle", periodicIO.adjustedYaw);
+        SmartDashboard.putString("drivetrain/pose", getPose().toString());
+        SmartDashboard.putNumber("drivetrain/chassisVx", periodicIO.chassisVx);
+        SmartDashboard.putNumber("drivetrain/chassisVy", periodicIO.chassisVy);
+        SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
+        SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
+    }
+
+    public void setWantedState(WantedState wantedState)
+    {
+        this.wantedState = wantedState;
+    }
+
+    public void zeroGyroscope() {
+        ahrs.zeroYaw();
+        gyroOffset = 0;
+    }
+
+
+  
+    public void setModuleStates(SwerveModuleState[] desiredStates) {
+        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.maxSpeed);
+        
+        for(SwerveModule mod : mSwerveMods){
+            mod.setDesiredState(desiredStates[mod.moduleNumber], false);
+        }
+    } 
+
+
+    
+    private SystemState handleManualControl(){
+
+        return defaultStateChange();
+    }
+
+    private boolean checkNoDriveInput(){
+        return(Math.abs(periodicIO.VxCmd) < Constants.DEADBAND
+                && Math.abs(periodicIO.VyCmd) < Constants.DEADBAND
+                && Math.abs(periodicIO.WzCmd) < Constants.DEADBAND);
+    }
+
+    public Rotation2d getGyroscopeRotation() {
+        Rotation2d temp = Rotation2d.fromDegrees(periodicIO.adjustedYaw);
+        return temp;
+    }
+
+    public Pose2d getPose() {
+        return odometry.getPoseMeters();
+    }
+
+    private void updateOdometry(){
+
+        odometry.update(getYaw(), getModulePositions());  
+    }
+
+    public void resetOdometry(){
+        zeroGyroscope();
+    }
+
+    public SwerveDriveKinematics getKinematics() {
+        return m_kinematics;
+    }
+
+
+    public void setAutoDriveSpeeds(double xSpeed, double ySpeed){
+        autoDriveSpeeds[0] = xSpeed;
+        autoDriveSpeeds[1] = ySpeed;
+    }
+
+    public SwerveModulePosition[] getModulePositions(){
+        SwerveModulePosition[] positions = new SwerveModulePosition[4];
+        for(SwerveModule mod : mSwerveMods){
+            positions[mod.moduleNumber] = mod.getPosition();
+        }
+        return positions;
+    }
+
+    public void resetModulesToAbsolute(){
+        for(SwerveModule mod : mSwerveMods){
+            mod.resetToAbsolute();
+        }
+    }
+
+    public SwerveModuleState[] drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
+        chassisSpeeds = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getGyroscopeRotation())
+        : new ChassisSpeeds(xSpeed, ySpeed, rot);
+        SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(chassisSpeeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_VELOCITY_METERS_PER_SECOND);
+        for(SwerveModule mod : mSwerveMods){
+            mod.setDesiredState(states[mod.moduleNumber], true);
+        }
+        return states;
+    }
+ 
+
+    public Rotation2d getYaw() {
+        return Rotation2d.fromDegrees(ahrs.getYaw());
+    }
+
+    @Override
+    public boolean checkSystem() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+}
