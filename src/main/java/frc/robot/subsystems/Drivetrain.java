@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.SPI;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.LinearFilter;
@@ -49,14 +50,13 @@ public class Drivetrain implements Subsystem {
     );
 
  
-    private final AHRS ahrs;
+    private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
     private double gyroOffset;
 
     private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
 
-    private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
-
-    private SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
+    public SwerveDriveOdometry odometry; 
+    //public SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
     private enum SystemState{
         IDLE,   
@@ -123,7 +123,8 @@ public class Drivetrain implements Subsystem {
 
         this.controller = controller;
 
-        ahrs = new AHRS(Port.kMXP); 
+        odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
+        
         
         mSwerveMods = new SwerveModule[] {
             new SwerveModule(0, Constants.Swerve.Mod0.constants),
@@ -277,8 +278,6 @@ public class Drivetrain implements Subsystem {
         gyroOffset = 0;
     }
 
-
-  
     public void setModuleStates(SwerveModuleState[] desiredStates) {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.maxSpeed);
         
@@ -326,6 +325,14 @@ public class Drivetrain implements Subsystem {
     public void setAutoDriveSpeeds(double xSpeed, double ySpeed){
         autoDriveSpeeds[0] = xSpeed;
         autoDriveSpeeds[1] = ySpeed;
+    }
+
+    public SwerveModuleState[] getModuleStates(){
+        SwerveModuleState[] states = new SwerveModuleState[4];
+        for(SwerveModule mod : mSwerveMods){
+            states[mod.moduleNumber] = mod.getState();
+        }
+        return states;
     }
 
     public SwerveModulePosition[] getModulePositions(){
