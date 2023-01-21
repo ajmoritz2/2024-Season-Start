@@ -120,18 +120,18 @@ public class Drivetrain implements Subsystem {
         ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
         //yawCtrl.enableContinuousInput(-Math.PI, Math.PI);  //TODO check if Pigeon output rolls over 
 
-
+        mSwerveMods = new SwerveModule[] {
+        new SwerveModule(0, Constants.Swerve.Mod0.constants),
+        new SwerveModule(1, Constants.Swerve.Mod1.constants),
+        new SwerveModule(2, Constants.Swerve.Mod2.constants),
+        new SwerveModule(3, Constants.Swerve.Mod3.constants)
+        };
         this.controller = controller;
 
         odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
         
         
-        mSwerveMods = new SwerveModule[] {
-            new SwerveModule(0, Constants.Swerve.Mod0.constants),
-            new SwerveModule(1, Constants.Swerve.Mod1.constants),
-            new SwerveModule(2, Constants.Swerve.Mod2.constants),
-            new SwerveModule(3, Constants.Swerve.Mod3.constants)
-        };
+        
 
         //TODO TEMPORARY
         resetOdometry();
