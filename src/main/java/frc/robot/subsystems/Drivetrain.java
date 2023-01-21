@@ -54,7 +54,7 @@ public class Drivetrain implements Subsystem {
 
     private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
 
-    private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(m_kinematics, Rotation2d.fromDegrees(0.0), null);
+    private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
 
     private SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
