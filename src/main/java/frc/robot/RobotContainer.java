@@ -61,7 +61,7 @@ public class RobotContainer {
 
 		manager = new SubsystemManager(0.02);
 
-		manager.setSubsystems();
+		manager.setSubsystems(drivetrain);
 
 		configureButtonBindings();
 		configureAuton();

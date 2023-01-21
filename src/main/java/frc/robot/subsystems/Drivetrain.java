@@ -128,11 +128,9 @@ public class Drivetrain implements Subsystem {
         };
         this.controller = controller;
 
+        resetModulesToAbsolute();
         odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
         
-        
-        
-
         //TODO TEMPORARY
         resetOdometry();
     }
@@ -188,7 +186,7 @@ public class Drivetrain implements Subsystem {
         SwerveModuleState[] moduleStates = new SwerveModuleState[4];
         switch(currentState){
             case MANUAL_CONTROL:
-                moduleStates = drive(periodicIO.VxCmd, periodicIO.VyCmd, periodicIO.WzCmd, !periodicIO.robotOrientedModifier);
+                moduleStates = drive(periodicIO.VxCmd, periodicIO.VyCmd, controller.getRightX()*.5, !periodicIO.robotOrientedModifier);
                 break;
             default:
             case IDLE:
@@ -199,12 +197,12 @@ public class Drivetrain implements Subsystem {
         setModuleStates(moduleStates);
         updateStateVariables(moduleStates);
     }
-
-    /*@Override
+/* 
+    @Override
     public void periodic() {
-        updateOdometry();
-    }*/
-
+        
+    }
+*/
     private SystemState defaultStateChange() {
 		switch (wantedState){
             /*case IDLE:
@@ -266,6 +264,13 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putNumber("drivetrain/chassisVy", periodicIO.chassisVy);
         SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
         SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
+        /* 
+        for(SwerveModule mod : mSwerveMods){
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);    
+        }
+        */
     }
 
     public void setWantedState(WantedState wantedState)

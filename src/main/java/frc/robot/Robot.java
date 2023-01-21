@@ -26,6 +26,7 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+    m_robotContainer.startSubsystemThreads();
   }
 
   @Override
@@ -34,6 +35,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
+    m_robotContainer.stopSubsystems();
+		m_robotContainer.enableState = RobotContainer.EnableState.DISABLED;
     m_autoSelected = m_chooser.getSelected();
     System.out.println("Auto selected: " + m_autoSelected);
   }
@@ -50,7 +53,9 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    m_robotContainer.enableState = RobotContainer.EnableState.TELEOP;
+  }
 
   @Override
   public void teleopPeriodic() {
