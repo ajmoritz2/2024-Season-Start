@@ -355,7 +355,7 @@ public class Drivetrain implements Subsystem {
     }
 
     public SwerveModuleState[] drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
-        chassisSpeeds = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getGyroscopeRotation())
+        chassisSpeeds = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getYaw())
         : new ChassisSpeeds(xSpeed, ySpeed, rot);
         SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(chassisSpeeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_VELOCITY_METERS_PER_SECOND);
@@ -367,7 +367,13 @@ public class Drivetrain implements Subsystem {
  
 
     public Rotation2d getYaw() {
-        return Rotation2d.fromDegrees(ahrs.getYaw());
+        if (ahrs.isMagnetometerCalibrated()) {
+            // We will only get valid fused headings if the magnetometer is calibrated
+            return Rotation2d.fromDegrees(ahrs.getFusedHeading());
+          }
+       //
+       //    // We have to invert the angle of the NavX so that rotating the robot counter-clockwise makes the angle increase.
+          return Rotation2d.fromDegrees(360.0 - ahrs.getYaw());
     }
 
     @Override
