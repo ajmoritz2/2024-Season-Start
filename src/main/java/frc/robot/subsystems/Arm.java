@@ -1,14 +1,20 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.XboxController;
 
+import edu.wpi.first.math.controller.PIDController;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.sensors.CANCoder;
 
 public class Arm implements Subsystem{
+
+    private TalonFX liftMotor;
+    private TalonFX rotateMotorLeft;
+    private TalonFX rotateMotorRight;
+    private CANCoder magEncoder;
 
     private enum SystemState{
 
