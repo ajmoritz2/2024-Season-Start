@@ -4,16 +4,12 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.*;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.loops.SubsystemManager;
-
-
-import java.nio.file.Path;
+import frc.robot.subsystems.Arm;
 
 
 /**
@@ -30,7 +26,8 @@ public class RobotContainer {
 	public final XboxController operatorController;
 
 	private final SubsystemManager manager;
-
+	private final Arm arm;
+	
 	private SendableChooser<Command> autonChooser;
 
 	public enum EnableState {
@@ -55,25 +52,12 @@ public class RobotContainer {
 		
 
 		manager = new SubsystemManager(0.02);
+		arm = new Arm(driverController);
 
-		manager.setSubsystems();
+		manager.setSubsystems(arm);
 
-		configureButtonBindings();
 		configureAuton();
 
-
-	}
-
-	/**
-	 * Use this method to define your button->command mappings. Buttons can be created by
-	 * instantiating a {@link GenericHID} or one of its subclasses ({@link
-	 * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-	 * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-	 */
-	private void configureButtonBindings() {
-				
-	
-		//firstBall.and(secondBall).whenActive(new InstantCommand(() -> cargoManager.setWantedState(CargoManager.WantedState.SPINUP)));
 
 	}
 
