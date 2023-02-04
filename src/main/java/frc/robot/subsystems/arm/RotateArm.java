@@ -3,7 +3,6 @@ package frc.robot.subsystems.arm;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FollowerType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 
@@ -146,7 +145,7 @@ public class RotateArm implements Subsystem {
 
     public void configExtend(float speed){
         rotateMotorLeft.setNeutralMode(NeutralMode.Coast);
-        rotateMotorLeft.set(ControlMode.PercentOutput,ensureRange(speed,-Constants.Arm.MAX_ROTATO_SPEED,Constants.Arm.MAX_ROTATO_SPEED));
+        rotateMotorLeft.set(ControlMode.PercentOutput,ensureRange(speed,-Constants.Arm.MAXROTATOSPEED,Constants.Arm.MAXROTATOSPEED));
     }
 
     @Override

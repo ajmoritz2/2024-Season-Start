@@ -9,6 +9,9 @@ public class Constants {
         public static final int EXTENDENCODER = 0;
 
         public static final float MAXEXTENDOSPEED = 0.2F;
+
+        public static final float MAXROTATOSPEED = 0.2F;
+        public static final int ROTATE_DEADRANGE = 0;
     }
     
 }
