@@ -162,6 +162,8 @@ public class Drivetrain implements Subsystem {
         periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
+
+        
         double[] chassisVelocity = chassisSpeedsGetter();
         periodicIO.chassisVx = chassisVelocity[0];
         periodicIO.chassisVy = chassisVelocity[1];
@@ -241,7 +243,7 @@ public class Drivetrain implements Subsystem {
     public String getId() {
         return "Drivetrain";
     }
-
+/* 
     @Override
     public void outputTelemetry(double timestamp) {
         SmartDashboard.putString("drivetrain/wantedStateAPI", this.wantedState.toString());
@@ -272,7 +274,7 @@ public class Drivetrain implements Subsystem {
         }
         
     }
-
+*/
     public void setWantedState(WantedState wantedState)
     {
         this.wantedState = wantedState;
@@ -302,11 +304,6 @@ public class Drivetrain implements Subsystem {
         return(Math.abs(periodicIO.VxCmd) < Constants.DEADBAND
                 && Math.abs(periodicIO.VyCmd) < Constants.DEADBAND
                 && Math.abs(periodicIO.WzCmd) < Constants.DEADBAND);
-    }
-
-    public Rotation2d getGyroscopeRotation() {
-        Rotation2d temp = Rotation2d.fromDegrees(periodicIO.adjustedYaw);
-        return temp;
     }
 
     public Pose2d getPose() {
