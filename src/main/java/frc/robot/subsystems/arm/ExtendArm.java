@@ -101,8 +101,10 @@ public class ExtendArm implements Subsystem {
             wantedState = (currentState != SystemState.HOLD) ? WantedState.HOLD : WantedState.EXTEND; 
        
 
-       if (controller.getBButtonReleased())
-        wantedState = (currentState != SystemState.HOLD) ? WantedState.HOLD : WantedState.RETRACT;  
+       if (controller.getBButtonReleased()){
+            wantedState = (currentState != SystemState.HOLD) ? WantedState.HOLD : WantedState.RETRACT;  
+            System.out.println("BBBBBB");
+        }
     }
 
     @Override

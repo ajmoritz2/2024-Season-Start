@@ -7,6 +7,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 public class Arm implements Subsystem {
@@ -30,8 +31,8 @@ public class Arm implements Subsystem {
         RETRACT;
     }
 
-    private SystemState currentState = SystemState.NEUTRAL;
-    private WantedState wantedState = WantedState.NEUTRAL;
+    private SystemState currentState = SystemState.EXTEND;
+    private WantedState wantedState = WantedState.EXTEND;
 
     private double currentStateStartTime = 0;
 
@@ -44,11 +45,12 @@ public class Arm implements Subsystem {
         liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR);
         magEncoder = new CANCoder(Constants.Arm.EXTENDENCODER);
 
-        liftMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
+        // liftMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
     }
 
     @Override
     public void processLoop(double timestamp) {
+        
         SystemState newState;
         switch(currentState){
             default:
@@ -89,6 +91,8 @@ public class Arm implements Subsystem {
     @Override
     public void writePeriodicOutputs(double timestamp)
     {
+        SmartDashboard.putString("Working", "Yes I am");
+
         switch (currentState){
             default:
             case NEUTRAL:
@@ -111,6 +115,11 @@ public class Arm implements Subsystem {
     public void stop() {
         configExtend(0);
         zeroSensors();
+    }
+
+    @Override
+    public void outputTelemetry(double timestamp){
+        SmartDashboard.putNumber("Current Time", timestamp);
     }
 
     private SystemState handleManual(){
