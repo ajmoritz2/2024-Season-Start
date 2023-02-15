@@ -10,7 +10,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.loops.SubsystemManager;
 import frc.robot.subsystems.Arm;
-import frc.robot.subsystems.arm.ExtendArm;
 
 
 /**
@@ -28,7 +27,6 @@ public class RobotContainer {
 
 	private final SubsystemManager manager;
 	private final Arm arm;
-	private final ExtendArm extendoarm;
 	
 	private SendableChooser<Command> autonChooser;
 
@@ -55,7 +53,6 @@ public class RobotContainer {
 
 		manager = new SubsystemManager(0.02);
 		arm = new Arm(driverController);
-		extendoarm = new ExtendArm(driverController);
 
 		manager.setSubsystems(arm);
 

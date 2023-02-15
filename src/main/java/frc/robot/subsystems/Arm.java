@@ -6,6 +6,8 @@ import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 
+import edu.wpi.first.math.controller.ElevatorFeedforward;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
@@ -16,25 +18,29 @@ public class Arm implements Subsystem {
     private TalonFX rotateMotorLeft;
     private TalonFX rotateMotorRight;
     private CANCoder magEncoder;
+    private ElevatorFeedforward feedforward;
 
     private enum SystemState{
         NEUTRAL,
-        HOLD,
-        EXTEND,
-        RETRACT;
+        GROUND_ANGLE,
+        HUMAN_FOLD,
+        PLACING,
+        HIGH,
+        MID,
+        TRAVEL,
+        START;
     }
 
-    public enum WantedState{
-        NEUTRAL,
-        HOLD,
-        EXTEND,
-        RETRACT;
-    }
+    private SystemState currentState = SystemState.NEUTRAL;
+    private SystemState wantedState = SystemState.NEUTRAL;
 
-    private SystemState currentState = SystemState.EXTEND;
-    private WantedState wantedState = WantedState.EXTEND;
+    private final TrapezoidProfile.Constraints m_constraints =
 
-    private double currentStateStartTime = 0;
+    new TrapezoidProfile.Constraints(10, 2);
+
+    private TrapezoidProfile.State m_goal = new TrapezoidProfile.State();
+
+    private TrapezoidProfile.State m_setpoint = new TrapezoidProfile.State();
 
     private final XboxController controller;
 
@@ -43,35 +49,70 @@ public class Arm implements Subsystem {
         this.controller = controller;
 
         liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR);
+        rotateMotorRight = new TalonFX(Constants.Arm.ROTATEMOTOR2);
+        rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1);
         magEncoder = new CANCoder(Constants.Arm.EXTENDENCODER);
+        liftMotor.configFactoryDefault();
+        rotateMotorLeft.configFactoryDefault();
 
+        liftMotor.selectProfileSlot(0, 0);
+		liftMotor.config_kF(0, 0.125);
+		liftMotor.config_kP(0,0.0625);
+		liftMotor.config_kI(0, 0);
+		liftMotor.config_kD(0, 0);
+
+        liftMotor.configPeakOutputForward(0.2);
+        liftMotor.configPeakOutputReverse(0.2);
+
+
+        rotateMotorLeft.selectProfileSlot(0, 0);
+		rotateMotorLeft.config_kF(0, 0.125);
+		rotateMotorLeft.config_kP(0,0.0625);
+		rotateMotorLeft.config_kI(0, 0);
+		rotateMotorLeft.config_kD(0, 0);
+
+        rotateMotorLeft.configPeakOutputForward(0.2);
+        rotateMotorLeft.configPeakOutputReverse(0.2);
+
+        rotateMotorRight.selectProfileSlot(0, 0);
+		rotateMotorRight.config_kF(0, 0.125);
+		rotateMotorRight.config_kP(0,0.0625);
+		rotateMotorRight.config_kI(0, 0);
+		rotateMotorRight.config_kD(0, 0);
+
+        rotateMotorLeft.configPeakOutputForward(0.2);
+        rotateMotorLeft.configPeakOutputReverse(0.2);
+
+        feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
+        liftMotor.setSensorPhase(true);
+
+        rotateMotorLeft.follow(rotateMotorRight);
         // liftMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
     }
 
     @Override
     public void processLoop(double timestamp) {
         
-        SystemState newState;
-        switch(currentState){
-            default:
-            case NEUTRAL:
-                newState = handleManual();
-                break;
-            case EXTEND:
-                newState = handleManual();
-                break;
-            case RETRACT:
-                newState = handleManual();
-                break;
-            case HOLD:
-                newState = handleManual();
-                break;
-        }
+        // SystemState newState;
+        // switch(currentState){
+        //     default:
+        //     case NEUTRAL:
+        //         newState = handleManual();
+        //         break;
+        //     case GROUND_ANGLE:
+        //         newState = handleManual();
+        //         break;
+        //     case HUMAN_FOLD:
+        //         newState = handleManual();
+        //         break;
+        //     case PLACING:
+        //         newState = handleManual();
+        //         break;
+        // }
 
-        if (newState != currentState) {
-			currentState = newState;
-			currentStateStartTime = timestamp;
-		}
+        if (wantedState != currentState) {
+			currentState = wantedState;
+        }
     }
 
     @Override
@@ -80,33 +121,41 @@ public class Arm implements Subsystem {
         // (condition) ? true : false;
 
         // I also do != Neutral because that should make sure it isn't in some weird mode and have some motors clash
-       if (controller.getAButtonReleased())
-            wantedState = (currentState != SystemState.NEUTRAL) ? WantedState.NEUTRAL : WantedState.EXTEND; 
+        // Examples of controller inputs:
+
+    //    if (controller.getAButtonReleased())
+    //         wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.EXTEND; 
        
 
-       if (controller.getBButtonReleased())
-        wantedState = (currentState != SystemState.NEUTRAL) ? WantedState.NEUTRAL : WantedState.RETRACT;  
+    //    if (controller.getBButtonReleased())
+    //     wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.RETRACT;  
+
+
     }
 
     @Override
     public void writePeriodicOutputs(double timestamp)
     {
-        SmartDashboard.putString("Working", "Yes I am");
-
         switch (currentState){
             default:
             case NEUTRAL:
                 configExtend(0);
                 break;
-            case EXTEND:
+            case GROUND_ANGLE:
                 configExtend(1);
                 break;
-            case RETRACT:
+            case HUMAN_FOLD:
                 configExtend(-1);
                 break;
-            case HOLD:
+            case PLACING:
                 configExtend(0);
                 liftMotor.setNeutralMode(NeutralMode.Brake);
+                break;
+            case HIGH:
+                //TODO: put something here
+                break;
+            case MID:
+                // MID
                 break;
         }
     }
@@ -119,30 +168,21 @@ public class Arm implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp){
-        SmartDashboard.putNumber("Current Time", timestamp);
+        double calced = feedforward.calculate(m_setpoint.position);
+
+
+        SmartDashboard.putNumber("Current Time", liftMotor.getSelectedSensorPosition());
     }
 
     private SystemState handleManual(){
-        switch (wantedState){
-            case HOLD:
-                return SystemState.HOLD;
-            case NEUTRAL:
-                return SystemState.NEUTRAL;
-            case EXTEND:
-                return SystemState.EXTEND;
-            case RETRACT:
-                return SystemState.RETRACT;
-            default:
-                return SystemState.NEUTRAL;
-
-        }
+        return wantedState;
     }
 
     public void configExtend(float speed){
-        liftMotor.setNeutralMode(NeutralMode.Coast);
-        liftMotor.set(ControlMode.PercentOutput,ensureRange(speed,-Constants.Arm.MAXEXTENDOSPEED,Constants.Arm.MAXEXTENDOSPEED));
+        liftMotor.set(ControlMode.Position, speed*100000);
+        
     }
-
+    
     @Override
     public boolean checkSystem() {
         return false;
@@ -150,6 +190,8 @@ public class Arm implements Subsystem {
 
     @Override
     public void zeroSensors() {
+        liftMotor.setSelectedSensorPosition(0);
+        rotateMotorRight.setSelectedSensorPosition(0);
         magEncoder.setPosition(0);
     }
 
