@@ -68,7 +68,7 @@ public class Arm implements Subsystem {
 		liftMotor.config_kD(0, 0);
 
         liftMotor.configPeakOutputForward(0.2);
-        liftMotor.configPeakOutputReverse(0.2);
+        liftMotor.configPeakOutputReverse(-0.2);
 
 
         rotateMotorLeft.selectProfileSlot(0, 0);
@@ -78,7 +78,7 @@ public class Arm implements Subsystem {
 		rotateMotorLeft.config_kD(0, 0);
 
         rotateMotorLeft.configPeakOutputForward(0.2);
-        rotateMotorLeft.configPeakOutputReverse(0.2);
+        rotateMotorLeft.configPeakOutputReverse(-0.2);
 
         rotateMotorRight.selectProfileSlot(0, 0);
 		rotateMotorRight.config_kF(0, 0.125);
@@ -87,7 +87,7 @@ public class Arm implements Subsystem {
 		rotateMotorRight.config_kD(0, 0);
 
         rotateMotorRight.configPeakOutputForward(0.2);
-        rotateMotorRight.configPeakOutputReverse(0.2);
+        rotateMotorRight.configPeakOutputReverse(-0.2);
 
         feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
         liftMotor.setSensorPhase(true);
@@ -140,7 +140,7 @@ public class Arm implements Subsystem {
        if(controller.getAButtonPressed())
             wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.GROUND_ANGLE;
 
-       else if(controller.getBButtonPressed())
+       if(controller.getBButtonPressed())
             setWantedState(SystemState.NEUTRAL);
 
     }
