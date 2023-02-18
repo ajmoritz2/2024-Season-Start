@@ -17,10 +17,11 @@ public class Arm implements Subsystem {
     private TalonFX liftMotor;
     private TalonFX rotateMotorLeft;
     private TalonFX rotateMotorRight;
-    private CANCoder magEncoder;
+    private CANCoder armEncoder;
+    private CANCoder rotateEncoder;
     private ElevatorFeedforward feedforward;
 
-    private enum SystemState{
+    public enum SystemState{
         NEUTRAL,
         GROUND_ANGLE,
         HUMAN_FOLD,
@@ -51,13 +52,14 @@ public class Arm implements Subsystem {
         liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR);
         rotateMotorRight = new TalonFX(Constants.Arm.ROTATEMOTOR2);
         rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1);
-        magEncoder = new CANCoder(Constants.Arm.EXTENDENCODER);
+        armEncoder = new CANCoder(Constants.Arm.EXTENDENCODER);
+        rotateEncoder = new CANCoder(Constants.Arm.ROTATEENCODER);
         liftMotor.configFactoryDefault();
         rotateMotorLeft.configFactoryDefault();
 
         liftMotor.selectProfileSlot(0, 0);
 		liftMotor.config_kF(0, 0.125);
-		liftMotor.config_kP(0,0.0625);
+		liftMotor.config_kP(0,0.1); //0.0625
 		liftMotor.config_kI(0, 0);
 		liftMotor.config_kD(0, 0);
 
@@ -80,8 +82,8 @@ public class Arm implements Subsystem {
 		rotateMotorRight.config_kI(0, 0);
 		rotateMotorRight.config_kD(0, 0);
 
-        rotateMotorLeft.configPeakOutputForward(0.2);
-        rotateMotorLeft.configPeakOutputReverse(0.2);
+        rotateMotorRight.configPeakOutputForward(0.2);
+        rotateMotorRight.configPeakOutputReverse(0.2);
 
         feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
         liftMotor.setSensorPhase(true);
@@ -93,22 +95,22 @@ public class Arm implements Subsystem {
     @Override
     public void processLoop(double timestamp) {
         
-        // SystemState newState;
-        // switch(currentState){
-        //     default:
-        //     case NEUTRAL:
-        //         newState = handleManual();
-        //         break;
-        //     case GROUND_ANGLE:
-        //         newState = handleManual();
-        //         break;
-        //     case HUMAN_FOLD:
-        //         newState = handleManual();
-        //         break;
-        //     case PLACING:
-        //         newState = handleManual();
-        //         break;
-        // }
+         SystemState newState;
+         switch(currentState){
+             default:
+             case NEUTRAL:
+                 newState = handleManual();
+                 break;
+             case GROUND_ANGLE:
+                 newState = handleManual();
+                 break;
+             case HUMAN_FOLD:
+                 newState = handleManual();
+                 break;
+             case PLACING:
+                 newState = handleManual();
+                 break;
+         }
 
         if (wantedState != currentState) {
 			currentState = wantedState;
@@ -129,7 +131,11 @@ public class Arm implements Subsystem {
 
     //    if (controller.getBButtonReleased())
     //     wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.RETRACT;  
+       if(controller.getAButtonPressed())
+            setWantedState(SystemState.NEUTRAL);
 
+       if(controller.getBButtonPressed())
+            setWantedState(SystemState.GROUND_ANGLE);
 
     }
 
@@ -139,13 +145,13 @@ public class Arm implements Subsystem {
         switch (currentState){
             default:
             case NEUTRAL:
-                configExtend(0);
+                configRotate(0);
                 break;
             case GROUND_ANGLE:
-                configExtend(1);
+                configRotate(100000);
                 break;
             case HUMAN_FOLD:
-                configExtend(-1);
+                configExtend(200000);
                 break;
             case PLACING:
                 configExtend(0);
@@ -162,8 +168,7 @@ public class Arm implements Subsystem {
 
     @Override
     public void stop() {
-        configExtend(0);
-        zeroSensors();
+        
     }
 
     @Override
@@ -171,16 +176,24 @@ public class Arm implements Subsystem {
         double calced = feedforward.calculate(m_setpoint.position);
 
 
-        SmartDashboard.putNumber("Current Time", liftMotor.getSelectedSensorPosition());
+        SmartDashboard.putNumber("Current Lift Pos", liftMotor.getSelectedSensorPosition());
+        SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
     }
 
     private SystemState handleManual(){
         return wantedState;
     }
 
-    public void configExtend(float speed){
-        liftMotor.set(ControlMode.Position, speed*100000);
-        
+    public void setWantedState(SystemState wanted){
+        wantedState = wanted;
+    }
+
+    public void configExtend(double position){
+        liftMotor.set(ControlMode.Position, position);
+    }
+   
+    public void configRotate(double pos){
+        rotateMotorLeft.set(ControlMode.Position, pos);
     }
     
     @Override
@@ -192,7 +205,8 @@ public class Arm implements Subsystem {
     public void zeroSensors() {
         liftMotor.setSelectedSensorPosition(0);
         rotateMotorRight.setSelectedSensorPosition(0);
-        magEncoder.setPosition(0);
+        armEncoder.setPosition(0);
+        rotateEncoder.setPosition(0);
     }
 
     @Override

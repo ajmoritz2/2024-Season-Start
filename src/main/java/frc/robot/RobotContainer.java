@@ -5,11 +5,15 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.PS4Controller;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.loops.SubsystemManager;
 import frc.robot.subsystems.Arm;
+import frc.robot.subsystems.Arm.SystemState;
 
 
 /**
@@ -23,11 +27,14 @@ public class RobotContainer {
 	private static RobotContainer INSTANCE;
 
 	public final XboxController driverController;
-	public final XboxController operatorController;
+	public final PS4Controller operatorController;
 
 	private final SubsystemManager manager;
-	private final Arm arm;
+	public static Arm arm;
 	
+	private JoystickButton driveA;
+	private JoystickButton driveB;
+
 	private SendableChooser<Command> autonChooser;
 
 	public enum EnableState {
@@ -44,7 +51,7 @@ public class RobotContainer {
 	public RobotContainer() {
 		INSTANCE = this;
 		driverController = new XboxController(0);
-		operatorController = new XboxController(1);
+		operatorController = new PS4Controller(1);
 		// Configure the button bindings
 		LiveWindow.disableAllTelemetry();
 		LiveWindow.setEnabled(false);
@@ -57,13 +64,24 @@ public class RobotContainer {
 		manager.setSubsystems(arm);
 
 		configureAuton();
-
+		//configureButtonAddress();
+		//configureButtons();
 
 	}
 
 	private void configureAuton() {
 		
 
+	}
+
+	private void configureButtons(){
+		driveA.onTrue(new InstantCommand(()-> arm.setWantedState(SystemState.GROUND_ANGLE)));
+		
+	}
+
+	private void configureButtonAddress(){
+		driveA = new JoystickButton(driverController, 1);
+		driveB = new JoystickButton(driverController, 2);
 	}
 
 	public static synchronized RobotContainer getInstance() {
