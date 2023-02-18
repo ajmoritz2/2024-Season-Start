@@ -57,6 +57,10 @@ public class Arm implements Subsystem {
         liftMotor.configFactoryDefault();
         rotateMotorLeft.configFactoryDefault();
 
+        liftMotor.setNeutralMode(NeutralMode.Brake);
+        rotateMotorLeft.setNeutralMode(NeutralMode.Brake);
+        rotateMotorRight.setNeutralMode(NeutralMode.Brake);
+
         liftMotor.selectProfileSlot(0, 0);
 		liftMotor.config_kF(0, 0.125);
 		liftMotor.config_kP(0,0.1); //0.0625
@@ -87,8 +91,10 @@ public class Arm implements Subsystem {
 
         feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
         liftMotor.setSensorPhase(true);
+        rotateMotorLeft.setSensorPhase(true);
+        rotateMotorRight.setSensorPhase(true);
 
-        rotateMotorLeft.follow(rotateMotorRight);
+        //rotateMotorLeft.follow(rotateMotorRight);
         // liftMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
     }
 
@@ -113,7 +119,7 @@ public class Arm implements Subsystem {
          }
 
         if (wantedState != currentState) {
-			currentState = wantedState;
+			currentState = newState;
         }
     }
 
@@ -132,10 +138,10 @@ public class Arm implements Subsystem {
     //    if (controller.getBButtonReleased())
     //     wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.RETRACT;  
        if(controller.getAButtonPressed())
-            setWantedState(SystemState.NEUTRAL);
+            wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.GROUND_ANGLE;
 
-       if(controller.getBButtonPressed())
-            setWantedState(SystemState.GROUND_ANGLE);
+       else if(controller.getBButtonPressed())
+            setWantedState(SystemState.NEUTRAL);
 
     }
 
@@ -143,26 +149,25 @@ public class Arm implements Subsystem {
     public void writePeriodicOutputs(double timestamp)
     {
         switch (currentState){
+            case GROUND_ANGLE:
+                configRotate(50000);
+                break;
+            //case HUMAN_FOLD:
+              //  configRotate(-100000);
+              //  break;
+            // case PLACING:
+              //  configExtend(0);
+              //  break;
             default:
             case NEUTRAL:
-                configRotate(0);
+                configRotate(-100000);
                 break;
-            case GROUND_ANGLE:
-                configRotate(100000);
-                break;
-            case HUMAN_FOLD:
-                configExtend(200000);
-                break;
-            case PLACING:
-                configExtend(0);
-                liftMotor.setNeutralMode(NeutralMode.Brake);
-                break;
-            case HIGH:
+            //case HIGH:
                 //TODO: put something here
-                break;
-            case MID:
+               // break;
+           // case MID:
                 // MID
-                break;
+                //break;
         }
     }
 
@@ -194,6 +199,7 @@ public class Arm implements Subsystem {
    
     public void configRotate(double pos){
         rotateMotorLeft.set(ControlMode.Position, pos);
+        rotateMotorRight.set(ControlMode.Position, pos);
     }
     
     @Override
@@ -204,9 +210,10 @@ public class Arm implements Subsystem {
     @Override
     public void zeroSensors() {
         liftMotor.setSelectedSensorPosition(0);
+        rotateMotorLeft.setSelectedSensorPosition(0);
         rotateMotorRight.setSelectedSensorPosition(0);
-        armEncoder.setPosition(0);
-        rotateEncoder.setPosition(0);
+       // armEncoder.setPosition(0);
+       // rotateEncoder.setPosition(0);
     }
 
     @Override
