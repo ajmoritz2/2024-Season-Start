@@ -14,6 +14,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
 
 public class Arm implements Subsystem {
@@ -63,6 +64,7 @@ public class Arm implements Subsystem {
         liftMotor.configFactoryDefault();
         rotateMotorLeft.configFactoryDefault();
         rotateMotorRight.configFactoryDefault();
+        
 
         armLimitSwitch = new DigitalInput(0);
         rotateLimitSwitch = new DigitalInput(1);
@@ -73,7 +75,7 @@ public class Arm implements Subsystem {
 
         liftMotor.selectProfileSlot(0, 0);
 		liftMotor.config_kF(0, 0.125);
-		liftMotor.config_kP(0,0.5); //0.1
+		liftMotor.config_kP(0,2); //0.1
 		liftMotor.config_kI(0, 0);
 		liftMotor.config_kD(0, 0);
 
@@ -158,6 +160,9 @@ public class Arm implements Subsystem {
        if(controller.getBButtonPressed())
             setWantedState(SystemState.GROUND_ANGLE);
 
+        if(controller.getYButtonPressed())
+            setWantedState(SystemState.PLACING);
+
     }
 
     @Override
@@ -165,18 +170,18 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                //configRotate(-80000); //tagert -75200
-                configExtend(5000);
+                configRotate(-80000); //target -75200
                 break;
             //case HUMAN_FOLD:
               //  configRotate(-100000);
               //  break;
-            // case PLACING:
-              //  configExtend(0);
-              //  break;
+             case PLACING:
+                configRotate(-50000);
+                configExtend(50000);
+                break;
             default:
             case NEUTRAL:
-                //configRotate(0);
+                configRotate(0);
                 configExtend(0);
                 break;
             //case HIGH:
