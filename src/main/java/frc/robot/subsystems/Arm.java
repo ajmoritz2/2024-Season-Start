@@ -4,10 +4,14 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+
+import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.sensors.CANCoder;
 
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
@@ -17,6 +21,8 @@ public class Arm implements Subsystem {
     private TalonFX liftMotor;
     private TalonFX rotateMotorLeft;
     private TalonFX rotateMotorRight;
+    private DigitalInput armLimitSwitch;
+    private DigitalInput rotateLimitSwitch;
     private CANCoder armEncoder;
     private CANCoder rotateEncoder;
     private ElevatorFeedforward feedforward;
@@ -49,13 +55,17 @@ public class Arm implements Subsystem {
 
         this.controller = controller;
 
-        liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR);
-        rotateMotorRight = new TalonFX(Constants.Arm.ROTATEMOTOR2);
-        rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1);
-        armEncoder = new CANCoder(Constants.Arm.EXTENDENCODER);
-        rotateEncoder = new CANCoder(Constants.Arm.ROTATEENCODER);
+        liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR, "MANIPbus");
+        rotateMotorRight = new TalonFX(Constants.Arm.ROTATEMOTOR2, "MANIPbus");
+        rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
+        armEncoder = new CANCoder(Constants.Arm.EXTENDENCODER, "MANIPbus");
+        rotateEncoder = new CANCoder(Constants.Arm.ROTATEENCODER, "MANIPbus");
         liftMotor.configFactoryDefault();
         rotateMotorLeft.configFactoryDefault();
+        rotateMotorRight.configFactoryDefault();
+
+        armLimitSwitch = new DigitalInput(0);
+        rotateLimitSwitch = new DigitalInput(1);
 
         liftMotor.setNeutralMode(NeutralMode.Brake);
         rotateMotorLeft.setNeutralMode(NeutralMode.Brake);
@@ -63,17 +73,16 @@ public class Arm implements Subsystem {
 
         liftMotor.selectProfileSlot(0, 0);
 		liftMotor.config_kF(0, 0.125);
-		liftMotor.config_kP(0,0.1); //0.0625
+		liftMotor.config_kP(0,0.5); //0.1
 		liftMotor.config_kI(0, 0);
 		liftMotor.config_kD(0, 0);
 
         liftMotor.configPeakOutputForward(0.2);
         liftMotor.configPeakOutputReverse(-0.2);
 
-
         rotateMotorLeft.selectProfileSlot(0, 0);
 		rotateMotorLeft.config_kF(0, 0.125);
-		rotateMotorLeft.config_kP(0,0.0625);
+		rotateMotorLeft.config_kP(0,2.4); //2.4 5% overshoot
 		rotateMotorLeft.config_kI(0, 0);
 		rotateMotorLeft.config_kD(0, 0);
 
@@ -82,7 +91,7 @@ public class Arm implements Subsystem {
 
         rotateMotorRight.selectProfileSlot(0, 0);
 		rotateMotorRight.config_kF(0, 0.125);
-		rotateMotorRight.config_kP(0,0.0625);
+		rotateMotorRight.config_kP(0,2.4); //2.4 5% overshoot
 		rotateMotorRight.config_kI(0, 0);
 		rotateMotorRight.config_kD(0, 0);
 
@@ -137,11 +146,17 @@ public class Arm implements Subsystem {
 
     //    if (controller.getBButtonReleased())
     //     wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.RETRACT;  
+        if(!armLimitSwitch.get())
+            zeroArmSensors();
+
+        if(rotateLimitSwitch.get())
+            zeroRotateSensors();
+
        if(controller.getAButtonPressed())
-            wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.GROUND_ANGLE;
+            setWantedState(SystemState.NEUTRAL);
 
        if(controller.getBButtonPressed())
-            setWantedState(SystemState.NEUTRAL);
+            setWantedState(SystemState.GROUND_ANGLE);
 
     }
 
@@ -150,7 +165,8 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(50000);
+                //configRotate(-80000); //tagert -75200
+                configExtend(5000);
                 break;
             //case HUMAN_FOLD:
               //  configRotate(-100000);
@@ -160,7 +176,8 @@ public class Arm implements Subsystem {
               //  break;
             default:
             case NEUTRAL:
-                configRotate(-100000);
+                //configRotate(0);
+                configExtend(0);
                 break;
             //case HIGH:
                 //TODO: put something here
@@ -181,6 +198,8 @@ public class Arm implements Subsystem {
         double calced = feedforward.calculate(m_setpoint.position);
 
 
+        SmartDashboard.putBoolean("ArmLimitSwitch", armLimitSwitch.get());
+        SmartDashboard.putBoolean("RotateLimitSwitch", rotateLimitSwitch.get());
         SmartDashboard.putNumber("Current Lift Pos", liftMotor.getSelectedSensorPosition());
         SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
     }
@@ -215,6 +234,16 @@ public class Arm implements Subsystem {
        // armEncoder.setPosition(0);
        // rotateEncoder.setPosition(0);
     }
+   
+    public void zeroRotateSensors(){
+        rotateMotorLeft.setSelectedSensorPosition(0);
+        rotateMotorRight.setSelectedSensorPosition(0);
+    }
+    public void zeroArmSensors(){
+        liftMotor.setSelectedSensorPosition(0);
+    }
+
+    
 
     @Override
     public String getId() {

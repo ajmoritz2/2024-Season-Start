@@ -3,9 +3,9 @@ package frc.robot;
 public class Constants {
 
     public class Arm {
-        public static final int EXTENDMOTOR = 9;
-        public static final int ROTATEMOTOR1 = 10;
-        public static final int ROTATEMOTOR2 = 11;
+        public static final int EXTENDMOTOR = 13;
+        public static final int ROTATEMOTOR1 = 11;
+        public static final int ROTATEMOTOR2 = 12;
         public static final int EXTENDENCODER = 0;
         public static final int ROTATEENCODER = 0;
 

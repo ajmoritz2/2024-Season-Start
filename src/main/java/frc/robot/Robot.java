@@ -49,7 +49,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    RobotContainer.arm.zeroSensors();
+    //RobotContainer.arm.zeroSensors();
   }
 
   @Override
