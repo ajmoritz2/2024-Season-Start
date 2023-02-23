@@ -4,12 +4,13 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.PS4Controller;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.*;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.loops.SubsystemManager;
 import frc.robot.subsystems.*;
 
@@ -28,9 +29,12 @@ public class RobotContainer {
 	private static RobotContainer INSTANCE;
 
 	public final XboxController driverController;
-	public final XboxController operatorController;
+	public final PS4Controller operatorController;
 
 	private final SubsystemManager manager;
+	public static Arm arm;
+	
+
 
 	private final Drivetrain drivetrain;
 
@@ -50,7 +54,7 @@ public class RobotContainer {
 	public RobotContainer() {
 		INSTANCE = this;
 		driverController = new XboxController(0);
-		operatorController = new XboxController(1);
+		operatorController = new PS4Controller(1);
 		// Configure the button bindings
 		LiveWindow.disableAllTelemetry();
 		LiveWindow.setEnabled(false);
@@ -60,31 +64,28 @@ public class RobotContainer {
 		
 
 		manager = new SubsystemManager(0.02);
+		arm = new Arm(driverController);
 
-		manager.setSubsystems(drivetrain);
+		manager.setSubsystems(drivetrain,arm);
+		
 
-		configureButtonBindings();
 		configureAuton();
-
-
-	}
-
-	/**
-	 * Use this method to define your button->command mappings. Buttons can be created by
-	 * instantiating a {@link GenericHID} or one of its subclasses ({@link
-	 * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-	 * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-	 */
-	private void configureButtonBindings() {
-				
-	
-		//firstBall.and(secondBall).whenActive(new InstantCommand(() -> cargoManager.setWantedState(CargoManager.WantedState.SPINUP)));
+		//configureButtonAddress();
+		//configureButtons();
 
 	}
 
 	private void configureAuton() {
 		
 
+	}
+
+	private void configureButtons(){
+		
+	}
+
+	private void configureButtonAddress(){
+	
 	}
 
 	public static synchronized RobotContainer getInstance() {

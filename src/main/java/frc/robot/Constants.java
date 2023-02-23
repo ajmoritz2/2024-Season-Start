@@ -204,4 +204,18 @@ public final class Constants {
         public static final int BACK_RIGHT_MODULE_STEER_ENCODER = 16; // FIXME Set back right steer encoder ID
         public static final double BACK_RIGHT_MODULE_STEER_OFFSET = -(6.2439-1.2+2.9-0.69); // FIXME Measure and set back right steer offset
     }
+
+    public class Arm {
+        public static final int EXTENDMOTOR = 13;
+        public static final int ROTATEMOTOR1 = 11;
+        public static final int ROTATEMOTOR2 = 12;
+        public static final int EXTENDENCODER = 0;
+        public static final int ROTATEENCODER = 0;
+
+        public static final float MAXEXTENDOSPEED = 0.2F;
+
+        public static final float MAXROTATOSPEED = 0.2F;
+        public static final int ROTATE_DEADRANGE = 0;
+    }
+    
 }
