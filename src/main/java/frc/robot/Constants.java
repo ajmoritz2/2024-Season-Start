@@ -217,5 +217,8 @@ public final class Constants {
         public static final float MAXROTATOSPEED = 0.2F;
         public static final int ROTATE_DEADRANGE = 0;
     }
+    public class INTAKE {
+        public static final int INTAKE_MOTOR = 12;
+    }
     
 }

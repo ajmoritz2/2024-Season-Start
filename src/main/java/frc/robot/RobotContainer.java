@@ -32,10 +32,8 @@ public class RobotContainer {
 	public final PS4Controller operatorController;
 
 	private final SubsystemManager manager;
+	public static Intake intake;
 	public static Arm arm;
-	
-
-
 	private final Drivetrain drivetrain;
 
 	private SendableChooser<Command> autonChooser;
@@ -58,7 +56,7 @@ public class RobotContainer {
 		// Configure the button bindings
 		LiveWindow.disableAllTelemetry();
 		LiveWindow.setEnabled(false);
-
+		intake = new Intake(driverController);
 		drivetrain = new Drivetrain(driverController);
 
 		
@@ -66,7 +64,7 @@ public class RobotContainer {
 		manager = new SubsystemManager(0.02);
 		arm = new Arm(driverController);
 
-		manager.setSubsystems(drivetrain,arm);
+		manager.setSubsystems(drivetrain,arm,intake);
 		
 
 		configureAuton();
