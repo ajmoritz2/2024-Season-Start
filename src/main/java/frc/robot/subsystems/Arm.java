@@ -13,6 +13,7 @@ import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
@@ -50,10 +51,13 @@ public class Arm implements Subsystem {
 
     private TrapezoidProfile.State m_setpoint = new TrapezoidProfile.State();
 
-    private final XboxController controller;
+    private final Intake intake;
 
-    public Arm(XboxController controller){
+    private final PS4Controller controller;
 
+    public Arm(PS4Controller controller, Intake intake){
+
+        this.intake = intake;
         this.controller = controller;
 
         liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR, "MANIPbus");
@@ -66,8 +70,8 @@ public class Arm implements Subsystem {
         rotateMotorRight.configFactoryDefault();
         
 
-        armLimitSwitch = new DigitalInput(0);
-        rotateLimitSwitch = new DigitalInput(1);
+        armLimitSwitch = new DigitalInput(1);
+        rotateLimitSwitch = new DigitalInput(0);
 
         liftMotor.setNeutralMode(NeutralMode.Brake);
         rotateMotorLeft.setNeutralMode(NeutralMode.Brake);
@@ -151,17 +155,23 @@ public class Arm implements Subsystem {
         if(!armLimitSwitch.get())
             zeroArmSensors();
 
-        if(rotateLimitSwitch.get())
+        if(!rotateLimitSwitch.get())
             zeroRotateSensors();
 
-       if(controller.getAButtonPressed())
+        
+        if(intake.getIntakeCurrent()>=150)
             setWantedState(SystemState.NEUTRAL);
 
-       if(controller.getBButtonPressed())
+        if(controller.getCrossButtonPressed())
             setWantedState(SystemState.GROUND_ANGLE);
+        if(controller.getCrossButtonReleased())
+            setWantedState(SystemState.NEUTRAL);
 
-        if(controller.getYButtonPressed())
+        if(controller.getCircleButtonPressed())
             setWantedState(SystemState.PLACING);
+
+        if(controller.getTriangleButtonPressed())
+            setWantedState(SystemState.NEUTRAL);
 
     }
 

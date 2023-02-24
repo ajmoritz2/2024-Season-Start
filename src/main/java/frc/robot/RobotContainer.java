@@ -11,9 +11,14 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.*;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.loops.SubsystemManager;
 import frc.robot.subsystems.*;
-
+import frc.robot.subsystems.Arm.SystemState;
+import frc.robot.subsystems.Intake.WantedState;
 
 import java.nio.file.Path;
 
@@ -32,9 +37,10 @@ public class RobotContainer {
 	public final PS4Controller operatorController;
 
 	private final SubsystemManager manager;
-	public static Intake intake;
-	public static Arm arm;
+
 	private final Drivetrain drivetrain;
+	private final Arm arm;
+	private final Intake intake;
 
 	private SendableChooser<Command> autonChooser;
 
@@ -56,25 +62,36 @@ public class RobotContainer {
 		// Configure the button bindings
 		LiveWindow.disableAllTelemetry();
 		LiveWindow.setEnabled(false);
-		intake = new Intake(driverController);
+		
+		intake = new Intake(operatorController);
+		arm = new Arm(operatorController,intake);
 		drivetrain = new Drivetrain(driverController);
-
 		
-
 		manager = new SubsystemManager(0.02);
-		arm = new Arm(driverController);
 
-		manager.setSubsystems(drivetrain,arm,intake);
-		
+		manager.setSubsystems(drivetrain, arm, intake);
 
-		configureAuton();
+
+		addressButtons();
+		configureButtonBindings();
 		//configureButtonAddress();
 		//configureButtons();
 
 	}
 
-	private void configureAuton() {
+	/**
+	 * Use this method to define your button->command mappings. Buttons can be created by
+	 * instantiating a {@link GenericHID} or one of its subclasses ({@link
+	 * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
+	 * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
+	 */
+
+	private void addressButtons(){
 		
+	 }
+	private void configureButtonBindings() {
+				
+		//firstBall.and(secondBall).whenActive(new InstantCommand(() -> cargoManager.setWantedState(CargoManager.WantedState.SPINUP)));
 
 	}
 

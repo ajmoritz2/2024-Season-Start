@@ -5,6 +5,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
@@ -12,34 +13,44 @@ public class Intake implements Subsystem {
 
 
     private enum SystemState{
-        IDLE,   
-        INTAKING,
+        IDLE,
+        INTAKING_CONE,
+        INTAKING_CUBE,
+        IDLE_CUBE,
         PLACING
-        
     }
 
     public enum WantedState{
         IDLE,
-        INTAKING,
+        INTAKING_CONE,
+        INTAKING_CUBE,
+        IDLE_CUBE,
         PLACING
     }
 
     private SystemState currentState = SystemState.IDLE;
     private WantedState wantedState = WantedState.IDLE;
 
+    private boolean haveCube;
+    private boolean haveCone;
+
     private double currentStateStartTime = 0;
 
     private TalonFX intakeMotor;
 
-    private final XboxController controller;
+    private final PS4Controller controller;
 
 
-    public Intake(XboxController controller){
-        intakeMotor = new TalonFX(Constants.INTAKE.INTAKE_MOTOR);
+    public Intake(PS4Controller controller){
+        intakeMotor = new TalonFX(Constants.INTAKE.INTAKE_MOTOR, "MANIPbus");
 
+        
         intakeMotor.configPeakOutputForward(1);
         intakeMotor.configPeakOutputReverse(-1);
         intakeMotor.setNeutralMode(NeutralMode.Brake); 
+        haveCone = false;
+        haveCube = false;
+
         this.controller = controller;
     }
 
@@ -49,7 +60,16 @@ public class Intake implements Subsystem {
         SystemState newState;
         switch (currentState){
             default:
-            case INTAKING:
+            case INTAKING_CONE:
+                newState = handleManual();
+                break;
+            case INTAKING_CUBE:
+                newState = handleManual();
+                break;
+            case PLACING:
+                newState = handleManual();
+                break;
+            case IDLE_CUBE:
                 newState = handleManual();
                 break;
             case IDLE:
@@ -65,14 +85,45 @@ public class Intake implements Subsystem {
 
     @Override
     public void readPeriodicInputs(double timestamp){
-        if (controller.getAButtonPressed())
-            wantedState = (currentState != SystemState.IDLE) ? WantedState.IDLE : WantedState.INTAKING;
-
-        if (currentState == SystemState.INTAKING && getIntakeCurrent() > 150)
+        if (controller.getL1ButtonPressed())
+            wantedState =  WantedState.INTAKING_CONE;
+        if (controller.getL1ButtonReleased())
             wantedState = WantedState.IDLE;
 
-        if (controller.getBButtonPressed())
-            wantedState = (currentState != SystemState.IDLE) ? WantedState.IDLE : WantedState.PLACING;
+        if (controller.getL2ButtonPressed())
+            wantedState = WantedState.INTAKING_CUBE;
+        if (controller.getL2ButtonReleased())
+            wantedState = WantedState.IDLE;
+
+        if (currentState == SystemState.INTAKING_CONE && getIntakeCurrent() > 150){
+            wantedState = WantedState.IDLE;
+            haveCone = true;
+        }
+        if (currentState == SystemState.INTAKING_CUBE && getIntakeCurrent() > 100){
+            setWantedState(WantedState.IDLE_CUBE);
+            haveCube = true;
+        }
+
+        if(haveCone){
+            wantedState = WantedState.IDLE;
+            if (controller.getL1ButtonPressed())
+                wantedState =  WantedState.INTAKING_CONE;
+        }
+        if (haveCube){
+            wantedState = WantedState.IDLE_CUBE;
+            if (controller.getL2ButtonPressed())
+                wantedState = WantedState.INTAKING_CUBE;
+        }
+
+            
+        if (controller.getR2ButtonPressed()){
+            wantedState = WantedState.PLACING;
+            haveCone = false;
+            haveCube = false;
+        }
+            
+        if (controller.getR2ButtonReleased())
+            wantedState = WantedState.IDLE;
 
 
     }
@@ -81,11 +132,17 @@ public class Intake implements Subsystem {
     public void writePeriodicOutputs(double timestamp){
         switch(currentState){
 
-            case INTAKING:
+            case INTAKING_CONE:
                 setIntakeSpeed(-.5);
                 break;
+            case INTAKING_CUBE:
+                setIntakeSpeed(-.3);
+                break;
             case PLACING:
-                setIntakeSpeed(.5);
+                setIntakeSpeed(1);
+                break;
+            case IDLE_CUBE:
+                setIntakeSpeed(-.1);
                 break;
             default:
             case IDLE:
@@ -97,10 +154,14 @@ public class Intake implements Subsystem {
 
     private SystemState handleManual(){
         switch (wantedState){
-            case INTAKING:
-                return SystemState.INTAKING;
+            case INTAKING_CONE:
+                return SystemState.INTAKING_CONE;
+            case INTAKING_CUBE:
+                return SystemState.INTAKING_CUBE;
             case PLACING:
                 return SystemState.PLACING;
+            case IDLE_CUBE:
+                return SystemState.IDLE_CUBE;
             default:
             case IDLE:
                 return SystemState.IDLE;
@@ -117,6 +178,8 @@ public class Intake implements Subsystem {
     public void outputTelemetry(double timestamp){
         SmartDashboard.putNumber("Current Stator Current", getIntakeCurrent());
         SmartDashboard.putNumber("Supply Current", intakeMotor.getSupplyCurrent());
+        SmartDashboard.putBoolean("HaveCube", haveCube);
+        SmartDashboard.putBoolean("HaveCone", haveCone);
     }
     @Override
     public void stop() {
