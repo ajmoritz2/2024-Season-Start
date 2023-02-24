@@ -9,10 +9,12 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.loops.SubsystemManager;
 import frc.robot.subsystems.*;
-
+import frc.robot.subsystems.Arm.SystemState;
+import frc.robot.subsystems.Intake.WantedState;
 
 import java.nio.file.Path;
 
@@ -28,11 +30,14 @@ public class RobotContainer {
 	private static RobotContainer INSTANCE;
 
 	public final XboxController driverController;
-	public final XboxController operatorController;
+	public final PS4Controller operatorController;
+
 
 	private final SubsystemManager manager;
 
 	private final Drivetrain drivetrain;
+	private final Arm arm;
+	private final Intake intake;
 
 	private SendableChooser<Command> autonChooser;
 
@@ -50,19 +55,21 @@ public class RobotContainer {
 	public RobotContainer() {
 		INSTANCE = this;
 		driverController = new XboxController(0);
-		operatorController = new XboxController(1);
+		operatorController = new PS4Controller(1);
 		// Configure the button bindings
 		LiveWindow.disableAllTelemetry();
 		LiveWindow.setEnabled(false);
-
-		drivetrain = new Drivetrain(driverController);
-
 		
-
+		intake = new Intake(operatorController);
+		arm = new Arm(operatorController,intake);
+		drivetrain = new Drivetrain(driverController);
+		
 		manager = new SubsystemManager(0.02);
 
-		manager.setSubsystems(drivetrain);
+		manager.setSubsystems(drivetrain, arm, intake);
 
+
+		addressButtons();
 		configureButtonBindings();
 		configureAuton();
 
@@ -75,9 +82,12 @@ public class RobotContainer {
 	 * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
 	 * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
 	 */
+
+	private void addressButtons(){
+		
+	 }
 	private void configureButtonBindings() {
 				
-	
 		//firstBall.and(secondBall).whenActive(new InstantCommand(() -> cargoManager.setWantedState(CargoManager.WantedState.SPINUP)));
 
 	}
