@@ -188,7 +188,7 @@ public class Drivetrain implements Subsystem {
         SwerveModuleState[] moduleStates = new SwerveModuleState[4];
         switch(currentState){
             case MANUAL_CONTROL:
-                moduleStates = drive(periodicIO.VxCmd, periodicIO.VyCmd, controller.getRightX()*.5, !periodicIO.robotOrientedModifier);
+                moduleStates = drive(periodicIO.VxCmd, periodicIO.VyCmd, -controller.getRightX()*.5, !periodicIO.robotOrientedModifier);
                 break;
             default:
             case IDLE:

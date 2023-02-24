@@ -159,7 +159,7 @@ public class Arm implements Subsystem {
             zeroRotateSensors();
 
         
-        if(intake.getIntakeCurrent()>=150)
+        if(intake.getIntakeCurrent()>=200 && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
             setWantedState(SystemState.NEUTRAL);
 
         if(controller.getCrossButtonPressed())
