@@ -148,7 +148,7 @@ public class Intake implements Subsystem {
                 setIntakeSpeed(-.3);
                 break;
             case PLACING:
-                setIntakeSpeed(1);
+                setIntakeSpeed(.5);
                 break;
             case IDLE_CUBE:
                 setIntakeSpeed(-.1);
