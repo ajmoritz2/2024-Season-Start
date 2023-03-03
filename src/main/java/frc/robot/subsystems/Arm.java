@@ -128,9 +128,12 @@ public class Arm implements Subsystem {
              case HUMAN_FOLD:
                  newState = handleManual();
                  break;
-             case PLACING:
+             case MID:
                  newState = handleManual();
                  break;
+             case HIGH:
+                newState = handleManual();
+                break;
          }
 
         if (wantedState != currentState) {
@@ -168,10 +171,13 @@ public class Arm implements Subsystem {
             setWantedState(SystemState.NEUTRAL);
 
         if(controller.getCircleButtonPressed())
-            setWantedState(SystemState.PLACING);
+            setWantedState(SystemState.MID);
 
         if(controller.getTriangleButtonPressed())
             setWantedState(SystemState.NEUTRAL);
+
+        if(controller.getSquareButtonPressed())
+            setWantedState(SystemState.HIGH);
 
     }
 
@@ -180,14 +186,16 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-80000); //target -75200
+                configRotate(-83000); //target -75200
+                configExtend(0);
                 break;
-            //case HUMAN_FOLD:
-              //  configRotate(-100000);
-              //  break;
-             case PLACING:
-                configRotate(-50000);
-                configExtend(50000);
+             case MID:
+                configRotate(-40478);
+                configExtend(58652);
+                break;
+                case HIGH:
+                configRotate(-40478);
+                configExtend(70000);
                 break;
             default:
             case NEUTRAL:
@@ -211,7 +219,6 @@ public class Arm implements Subsystem {
     @Override
     public void outputTelemetry(double timestamp){
         double calced = feedforward.calculate(m_setpoint.position);
-
 
         SmartDashboard.putBoolean("ArmLimitSwitch", armLimitSwitch.get());
         SmartDashboard.putBoolean("RotateLimitSwitch", rotateLimitSwitch.get());
