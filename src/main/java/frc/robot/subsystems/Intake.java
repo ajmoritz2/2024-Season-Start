@@ -142,13 +142,13 @@ public class Intake implements Subsystem {
         switch(currentState){
 
             case INTAKING_CONE:
-                setIntakeSpeed(-.7);
+                setIntakeSpeed(-1);
                 break;
             case INTAKING_CUBE:
                 setIntakeSpeed(-.3);
                 break;
             case PLACING:
-                setIntakeSpeed(.5);
+                setIntakeSpeed(.15);
                 break;
             case IDLE_CUBE:
                 setIntakeSpeed(-.1);

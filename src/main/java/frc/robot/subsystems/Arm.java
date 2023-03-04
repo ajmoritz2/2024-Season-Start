@@ -186,28 +186,23 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-83000); //target -75200
+                configRotate(-88190); //target -88190
                 configExtend(0);
                 break;
              case MID:
-                configRotate(-40478);
-                configExtend(58652);
+                configRotate(-46080); //target -46080
+                configExtend(39949); //target 39949
                 break;
-                case HIGH:
-                configRotate(-40478);
-                configExtend(70000);
+            case HIGH:
+                configRotate(-45320); //target-45320
+                configExtend(116256); //traget 116256
                 break;
             default:
             case NEUTRAL:
                 configRotate(0);
                 configExtend(0);
                 break;
-            //case HIGH:
-                //TODO: put something here
-               // break;
-           // case MID:
-                // MID
-                //break;
+            
         }
     }
 

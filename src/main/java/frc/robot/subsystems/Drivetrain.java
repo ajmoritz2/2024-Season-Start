@@ -26,7 +26,7 @@ import frc.robot.utils.maths.oneDimensionalLookup;
 
 public class Drivetrain implements Subsystem {
   
-    public static final double MAX_VOLTAGE = 12.0;
+    public static final double MAX_VOLTAGE = 10.0;
   
     public static final double MAX_VELOCITY_METERS_PER_SECOND = 10;
  
@@ -159,7 +159,7 @@ public class Drivetrain implements Subsystem {
     public void readPeriodicInputs(double timestamp) {
         periodicIO.VxCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftY()*Math.abs(controller.getLeftY())) * MAX_VELOCITY_METERS_PER_SECOND;
         periodicIO.VyCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftX()*Math.abs(controller.getLeftX())) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
+        periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()*Math.abs(controller.getRightX())) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
 
@@ -188,7 +188,7 @@ public class Drivetrain implements Subsystem {
         SwerveModuleState[] moduleStates = new SwerveModuleState[4];
         switch(currentState){
             case MANUAL_CONTROL:
-                moduleStates = drive(periodicIO.VxCmd*.25, periodicIO.VyCmd*.25, -controller.getRightX()*.5, !periodicIO.robotOrientedModifier);
+                moduleStates = drive(periodicIO.VxCmd*.25, periodicIO.VyCmd*.25, periodicIO.WzCmd*.25, !periodicIO.robotOrientedModifier);
                 break;
             default:
             case IDLE:
