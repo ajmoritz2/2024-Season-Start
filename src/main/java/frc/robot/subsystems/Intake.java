@@ -112,19 +112,7 @@ public class Intake implements Subsystem {
             );
             haveCube = true;
         }
-
-        if(haveCone){
-            wantedState = WantedState.IDLE;
-            if (controller.getL1ButtonPressed())
-                wantedState =  WantedState.INTAKING_CONE;
-        }
-        if (haveCube){
-            wantedState = WantedState.IDLE_CUBE;
-            if (controller.getL2ButtonPressed())
-                wantedState = WantedState.INTAKING_CUBE;
-        }
-
-            
+     
         if (controller.getR2ButtonPressed()){
             wantedState = WantedState.PLACING;
             haveCone = false;

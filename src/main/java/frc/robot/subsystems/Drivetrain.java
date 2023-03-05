@@ -77,6 +77,10 @@ public class Drivetrain implements Subsystem {
         double WzCmd; //rotational rate in radians/sec
         boolean robotOrientedModifier; //drive command modifier to set robot oriented translation control
 
+        double modifiedJoystickX;
+        double modifiedJoystickY;
+        double modifiedJoystickR;
+
         double limelightAngleError;
         double limelightDistance;
 
@@ -162,7 +166,9 @@ public class Drivetrain implements Subsystem {
         periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()*Math.abs(controller.getRightX())) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-
+        periodicIO.modifiedJoystickX = -controller.getLeftX()*Math.abs(controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.modifiedJoystickY = -controller.getLeftY()*Math.abs(controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.modifiedJoystickR = -controller.getRightX()*Math.abs(controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         
         double[] chassisVelocity = chassisSpeedsGetter();
         periodicIO.chassisVx = chassisVelocity[0];
@@ -188,7 +194,7 @@ public class Drivetrain implements Subsystem {
         SwerveModuleState[] moduleStates = new SwerveModuleState[4];
         switch(currentState){
             case MANUAL_CONTROL:
-                moduleStates = drive(periodicIO.VxCmd*.25, periodicIO.VyCmd*.25, periodicIO.WzCmd*.25, !periodicIO.robotOrientedModifier);
+                moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
                 break;
             default:
             case IDLE:

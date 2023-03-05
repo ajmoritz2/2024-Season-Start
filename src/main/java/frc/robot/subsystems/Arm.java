@@ -83,8 +83,8 @@ public class Arm implements Subsystem {
 		liftMotor.config_kI(0, 0);
 		liftMotor.config_kD(0, 0);
 
-        liftMotor.configPeakOutputForward(0.2);
-        liftMotor.configPeakOutputReverse(-0.2);
+        liftMotor.configPeakOutputForward(0.5);
+        liftMotor.configPeakOutputReverse(-0.5);
 
         rotateMotorLeft.selectProfileSlot(0, 0);
 		rotateMotorLeft.config_kF(0, 0.125);
@@ -92,8 +92,8 @@ public class Arm implements Subsystem {
 		rotateMotorLeft.config_kI(0, 0);
 		rotateMotorLeft.config_kD(0, 0);
 
-        rotateMotorLeft.configPeakOutputForward(0.2);
-        rotateMotorLeft.configPeakOutputReverse(-0.2);
+        rotateMotorLeft.configPeakOutputForward(0.5);
+        rotateMotorLeft.configPeakOutputReverse(-0.5);
 
         rotateMotorRight.selectProfileSlot(0, 0);
 		rotateMotorRight.config_kF(0, 0.125);
@@ -101,8 +101,8 @@ public class Arm implements Subsystem {
 		rotateMotorRight.config_kI(0, 0);
 		rotateMotorRight.config_kD(0, 0);
 
-        rotateMotorRight.configPeakOutputForward(0.2);
-        rotateMotorRight.configPeakOutputReverse(-0.2);
+        rotateMotorRight.configPeakOutputForward(0.5);
+        rotateMotorRight.configPeakOutputReverse(-0.5);
 
         feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
         liftMotor.setSensorPhase(true);
@@ -186,7 +186,7 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-88190); //target -88190
+                configRotate(-86190); //target -88190
                 configExtend(0);
                 break;
              case MID:
@@ -194,7 +194,7 @@ public class Arm implements Subsystem {
                 configExtend(39949); //target 39949
                 break;
             case HIGH:
-                configRotate(-45320); //target-45320
+                configRotate(-43320); //target-45320
                 configExtend(116256); //traget 116256
                 break;
             default:
