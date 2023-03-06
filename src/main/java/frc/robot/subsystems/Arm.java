@@ -21,7 +21,7 @@ import frc.robot.Constants;
 public class Arm implements Subsystem {
 
     private TalonFX liftMotor;
-    private TalonFX rotateMotorLeft;
+   // private TalonFX rotateMotorLeft;
     private TalonFX rotateMotorRight;
     private DigitalInput armLimitSwitch;
     private DigitalInput rotateLimitSwitch;
@@ -62,11 +62,11 @@ public class Arm implements Subsystem {
 
         liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR, "MANIPbus");
         rotateMotorRight = new TalonFX(Constants.Arm.ROTATEMOTOR2, "MANIPbus");
-        rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
+        //rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
         armEncoder = new CANCoder(Constants.Arm.EXTENDENCODER, "MANIPbus");
         rotateEncoder = new CANCoder(Constants.Arm.ROTATEENCODER, "MANIPbus");
         liftMotor.configFactoryDefault();
-        rotateMotorLeft.configFactoryDefault();
+        //rotateMotorLeft.configFactoryDefault();
         rotateMotorRight.configFactoryDefault();
         
 
@@ -74,7 +74,7 @@ public class Arm implements Subsystem {
         rotateLimitSwitch = new DigitalInput(0);
 
         liftMotor.setNeutralMode(NeutralMode.Brake);
-        rotateMotorLeft.setNeutralMode(NeutralMode.Brake);
+        //rotateMotorLeft.setNeutralMode(NeutralMode.Brake);
         rotateMotorRight.setNeutralMode(NeutralMode.Brake);
 
         liftMotor.selectProfileSlot(0, 0);
@@ -85,16 +85,16 @@ public class Arm implements Subsystem {
 
         liftMotor.configPeakOutputForward(0.5);
         liftMotor.configPeakOutputReverse(-0.5);
-
+        /* 
         rotateMotorLeft.selectProfileSlot(0, 0);
 		rotateMotorLeft.config_kF(0, 0.125);
 		rotateMotorLeft.config_kP(0,2.4); //2.4 5% overshoot
 		rotateMotorLeft.config_kI(0, 0);
 		rotateMotorLeft.config_kD(0, 0);
 
-        rotateMotorLeft.configPeakOutputForward(0.5);
-        rotateMotorLeft.configPeakOutputReverse(-0.5);
-
+        rotateMotorLeft.configPeakOutputForward(0.4);
+        rotateMotorLeft.configPeakOutputReverse(-0.4);
+        */
         rotateMotorRight.selectProfileSlot(0, 0);
 		rotateMotorRight.config_kF(0, 0.125);
 		rotateMotorRight.config_kP(0,2.4); //2.4 5% overshoot
@@ -106,7 +106,7 @@ public class Arm implements Subsystem {
 
         feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
         liftMotor.setSensorPhase(true);
-        rotateMotorLeft.setSensorPhase(true);
+       // rotateMotorLeft.setSensorPhase(true);
         rotateMotorRight.setSensorPhase(true);
 
         //rotateMotorLeft.follow(rotateMotorRight);
@@ -218,7 +218,7 @@ public class Arm implements Subsystem {
         SmartDashboard.putBoolean("ArmLimitSwitch", armLimitSwitch.get());
         SmartDashboard.putBoolean("RotateLimitSwitch", rotateLimitSwitch.get());
         SmartDashboard.putNumber("Current Lift Pos", liftMotor.getSelectedSensorPosition());
-        SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
+        //SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
     }
 
     private SystemState handleManual(){
@@ -234,7 +234,7 @@ public class Arm implements Subsystem {
     }
    
     public void configRotate(double pos){
-        rotateMotorLeft.set(ControlMode.Position, pos);
+        //rotateMotorLeft.set(ControlMode.Position, pos);
         rotateMotorRight.set(ControlMode.Position, pos);
     }
     
@@ -246,14 +246,14 @@ public class Arm implements Subsystem {
     @Override
     public void zeroSensors() {
         liftMotor.setSelectedSensorPosition(0);
-        rotateMotorLeft.setSelectedSensorPosition(0);
+        //rotateMotorLeft.setSelectedSensorPosition(0);
         rotateMotorRight.setSelectedSensorPosition(0);
        // armEncoder.setPosition(0);
        // rotateEncoder.setPosition(0);
     }
    
     public void zeroRotateSensors(){
-        rotateMotorLeft.setSelectedSensorPosition(0);
+        //rotateMotorLeft.setSelectedSensorPosition(0);
         rotateMotorRight.setSelectedSensorPosition(0);
     }
     public void zeroArmSensors(){
