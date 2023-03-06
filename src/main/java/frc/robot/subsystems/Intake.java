@@ -7,12 +7,15 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
 
 public class Intake implements Subsystem {
 
 
-    private enum SystemState{
+    public enum SystemState{
         IDLE,
         INTAKING_CONE,
         INTAKING_CUBE,
@@ -95,27 +98,21 @@ public class Intake implements Subsystem {
         if (controller.getL2ButtonReleased())
             wantedState = WantedState.IDLE;
 
-        if (currentState == SystemState.INTAKING_CONE && getIntakeCurrent() > 150){
-            wantedState = WantedState.IDLE;
+        if (currentState == SystemState.INTAKING_CONE && getIntakeCurrent() > 200){
+            new SequentialCommandGroup(
+                new WaitCommand(5),
+                new InstantCommand(()-> setWantedState(WantedState.IDLE))
+            );
             haveCone = true;
         }
         if (currentState == SystemState.INTAKING_CUBE && getIntakeCurrent() > 100){
-            setWantedState(WantedState.IDLE_CUBE);
+            new SequentialCommandGroup(
+                new WaitCommand(5),
+                new InstantCommand(()-> setWantedState(WantedState.IDLE_CUBE))
+            );
             haveCube = true;
         }
-
-        if(haveCone){
-            wantedState = WantedState.IDLE;
-            if (controller.getL1ButtonPressed())
-                wantedState =  WantedState.INTAKING_CONE;
-        }
-        if (haveCube){
-            wantedState = WantedState.IDLE_CUBE;
-            if (controller.getL2ButtonPressed())
-                wantedState = WantedState.INTAKING_CUBE;
-        }
-
-            
+     
         if (controller.getR2ButtonPressed()){
             wantedState = WantedState.PLACING;
             haveCone = false;
@@ -133,13 +130,13 @@ public class Intake implements Subsystem {
         switch(currentState){
 
             case INTAKING_CONE:
-                setIntakeSpeed(-.5);
+                setIntakeSpeed(-1);
                 break;
             case INTAKING_CUBE:
                 setIntakeSpeed(-.3);
                 break;
             case PLACING:
-                setIntakeSpeed(1);
+                setIntakeSpeed(.15);
                 break;
             case IDLE_CUBE:
                 setIntakeSpeed(-.1);
@@ -208,5 +205,9 @@ public class Intake implements Subsystem {
     public void setWantedState(WantedState wantedState) {
 		this.wantedState = wantedState;
 	}
+
+    public SystemState getCurrentState(){
+        return currentState;
+    }
 
 }

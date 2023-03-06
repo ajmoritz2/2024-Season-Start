@@ -14,7 +14,6 @@ public class Robot extends TimedRobot {
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
-  private static RobotContainer m_robotcontaineer;
 
   public static CTREConfigs ctreConfigs;
 
@@ -28,11 +27,6 @@ public class Robot extends TimedRobot {
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
     m_robotContainer.startSubsystemThreads();
-    m_robotcontaineer = new RobotContainer();
-    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
-    m_robotcontaineer.startSubsystemThreads();
   }
 
   @Override
@@ -61,7 +55,6 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     m_robotContainer.enableState = RobotContainer.EnableState.TELEOP;
-    //RobotContainer.arm.zeroSensors();
   }
 
   @Override

@@ -21,7 +21,7 @@ import frc.robot.Constants;
 public class Arm implements Subsystem {
 
     private TalonFX liftMotor;
-    private TalonFX rotateMotorLeft;
+   // private TalonFX rotateMotorLeft;
     private TalonFX rotateMotorRight;
     private DigitalInput armLimitSwitch;
     private DigitalInput rotateLimitSwitch;
@@ -62,11 +62,11 @@ public class Arm implements Subsystem {
 
         liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR, "MANIPbus");
         rotateMotorRight = new TalonFX(Constants.Arm.ROTATEMOTOR2, "MANIPbus");
-        rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
+        //rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
         armEncoder = new CANCoder(Constants.Arm.EXTENDENCODER, "MANIPbus");
         rotateEncoder = new CANCoder(Constants.Arm.ROTATEENCODER, "MANIPbus");
         liftMotor.configFactoryDefault();
-        rotateMotorLeft.configFactoryDefault();
+        //rotateMotorLeft.configFactoryDefault();
         rotateMotorRight.configFactoryDefault();
         
 
@@ -74,7 +74,7 @@ public class Arm implements Subsystem {
         rotateLimitSwitch = new DigitalInput(0);
 
         liftMotor.setNeutralMode(NeutralMode.Brake);
-        rotateMotorLeft.setNeutralMode(NeutralMode.Brake);
+        //rotateMotorLeft.setNeutralMode(NeutralMode.Brake);
         rotateMotorRight.setNeutralMode(NeutralMode.Brake);
 
         liftMotor.selectProfileSlot(0, 0);
@@ -83,30 +83,29 @@ public class Arm implements Subsystem {
 		liftMotor.config_kI(0, 0);
 		liftMotor.config_kD(0, 0);
 
-        liftMotor.configPeakOutputForward(0.2);
-        liftMotor.configPeakOutputReverse(-0.2);
-
+        liftMotor.configPeakOutputForward(0.5);
+        liftMotor.configPeakOutputReverse(-0.5);
+        /* 
         rotateMotorLeft.selectProfileSlot(0, 0);
 		rotateMotorLeft.config_kF(0, 0.125);
 		rotateMotorLeft.config_kP(0,2.4); //2.4 5% overshoot
 		rotateMotorLeft.config_kI(0, 0);
 		rotateMotorLeft.config_kD(0, 0);
-
-        rotateMotorLeft.configPeakOutputForward(0.2);
-        rotateMotorLeft.configPeakOutputReverse(-0.2);
-
+        rotateMotorLeft.configPeakOutputForward(0.4);
+        rotateMotorLeft.configPeakOutputReverse(-0.4);
+        */
         rotateMotorRight.selectProfileSlot(0, 0);
 		rotateMotorRight.config_kF(0, 0.125);
 		rotateMotorRight.config_kP(0,2.4); //2.4 5% overshoot
 		rotateMotorRight.config_kI(0, 0);
 		rotateMotorRight.config_kD(0, 0);
 
-        rotateMotorRight.configPeakOutputForward(0.2);
-        rotateMotorRight.configPeakOutputReverse(-0.2);
+        rotateMotorRight.configPeakOutputForward(0.5);
+        rotateMotorRight.configPeakOutputReverse(-0.5);
 
         feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
         liftMotor.setSensorPhase(true);
-        rotateMotorLeft.setSensorPhase(true);
+       // rotateMotorLeft.setSensorPhase(true);
         rotateMotorRight.setSensorPhase(true);
 
         //rotateMotorLeft.follow(rotateMotorRight);
@@ -128,9 +127,12 @@ public class Arm implements Subsystem {
              case HUMAN_FOLD:
                  newState = handleManual();
                  break;
-             case PLACING:
+             case MID:
                  newState = handleManual();
                  break;
+             case HIGH:
+                newState = handleManual();
+                break;
          }
 
         if (wantedState != currentState) {
@@ -159,7 +161,7 @@ public class Arm implements Subsystem {
             zeroRotateSensors();
 
         
-        if(intake.getIntakeCurrent()>=150)
+        if(intake.getIntakeCurrent()>=200 && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
             setWantedState(SystemState.NEUTRAL);
 
         if(controller.getCrossButtonPressed())
@@ -168,10 +170,13 @@ public class Arm implements Subsystem {
             setWantedState(SystemState.NEUTRAL);
 
         if(controller.getCircleButtonPressed())
-            setWantedState(SystemState.PLACING);
+            setWantedState(SystemState.MID);
 
         if(controller.getTriangleButtonPressed())
             setWantedState(SystemState.NEUTRAL);
+
+        if(controller.getSquareButtonPressed())
+            setWantedState(SystemState.HIGH);
 
     }
 
@@ -180,26 +185,23 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-80000); //target -75200
+                configRotate(-86190); //target -88190
+                configExtend(0);
                 break;
-            //case HUMAN_FOLD:
-              //  configRotate(-100000);
-              //  break;
-             case PLACING:
-                configRotate(-50000);
-                configExtend(50000);
+             case MID:
+                configRotate(-46080); //target -46080
+                configExtend(39949); //target 39949
+                break;
+            case HIGH:
+                configRotate(-43320); //target-45320
+                configExtend(116256); //traget 116256
                 break;
             default:
             case NEUTRAL:
                 configRotate(0);
                 configExtend(0);
                 break;
-            //case HIGH:
-                //TODO: put something here
-               // break;
-           // case MID:
-                // MID
-                //break;
+            
         }
     }
 
@@ -212,11 +214,10 @@ public class Arm implements Subsystem {
     public void outputTelemetry(double timestamp){
         double calced = feedforward.calculate(m_setpoint.position);
 
-
         SmartDashboard.putBoolean("ArmLimitSwitch", armLimitSwitch.get());
         SmartDashboard.putBoolean("RotateLimitSwitch", rotateLimitSwitch.get());
         SmartDashboard.putNumber("Current Lift Pos", liftMotor.getSelectedSensorPosition());
-        SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
+        //SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
     }
 
     private SystemState handleManual(){
@@ -232,7 +233,7 @@ public class Arm implements Subsystem {
     }
    
     public void configRotate(double pos){
-        rotateMotorLeft.set(ControlMode.Position, pos);
+        //rotateMotorLeft.set(ControlMode.Position, pos);
         rotateMotorRight.set(ControlMode.Position, pos);
     }
     
@@ -244,14 +245,14 @@ public class Arm implements Subsystem {
     @Override
     public void zeroSensors() {
         liftMotor.setSelectedSensorPosition(0);
-        rotateMotorLeft.setSelectedSensorPosition(0);
+        //rotateMotorLeft.setSelectedSensorPosition(0);
         rotateMotorRight.setSelectedSensorPosition(0);
        // armEncoder.setPosition(0);
        // rotateEncoder.setPosition(0);
     }
    
     public void zeroRotateSensors(){
-        rotateMotorLeft.setSelectedSensorPosition(0);
+        //rotateMotorLeft.setSelectedSensorPosition(0);
         rotateMotorRight.setSelectedSensorPosition(0);
     }
     public void zeroArmSensors(){

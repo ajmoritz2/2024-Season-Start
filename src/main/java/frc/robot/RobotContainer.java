@@ -4,11 +4,7 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.PS4Controller;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -35,6 +31,7 @@ public class RobotContainer {
 
 	public final XboxController driverController;
 	public final PS4Controller operatorController;
+
 
 	private final SubsystemManager manager;
 
@@ -74,8 +71,8 @@ public class RobotContainer {
 
 		addressButtons();
 		configureButtonBindings();
-		//configureButtonAddress();
-		//configureButtons();
+		configureAuton();
+
 
 	}
 
@@ -95,12 +92,9 @@ public class RobotContainer {
 
 	}
 
-	private void configureButtons(){
+	private void configureAuton() {
 		
-	}
 
-	private void configureButtonAddress(){
-	
 	}
 
 	public static synchronized RobotContainer getInstance() {
