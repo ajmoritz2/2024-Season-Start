@@ -100,8 +100,8 @@ public class Arm implements Subsystem {
 		rotateMotorRight.config_kI(0, 0);
 		rotateMotorRight.config_kD(0, 0);
 
-        rotateMotorRight.configPeakOutputForward(0.5);
-        rotateMotorRight.configPeakOutputReverse(-0.5);
+        rotateMotorRight.configPeakOutputForward(0.3);
+        rotateMotorRight.configPeakOutputReverse(-0.3);
 
         feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
         liftMotor.setSensorPhase(true);
