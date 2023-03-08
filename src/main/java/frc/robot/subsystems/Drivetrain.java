@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import com.pathplanner.lib.PathPlannerTrajectory;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -26,7 +27,7 @@ import frc.robot.utils.maths.oneDimensionalLookup;
 
 public class Drivetrain implements Subsystem {
   
-    public static final double MAX_VOLTAGE = 10.0;
+    public static final double MAX_VOLTAGE = 12.0;
   
     public static final double MAX_VELOCITY_METERS_PER_SECOND = 10;
  
@@ -53,19 +54,17 @@ public class Drivetrain implements Subsystem {
     private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
     private double gyroOffset;
 
-    private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
-
-    public SwerveDriveOdometry odometry; 
-    //public SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
     private enum SystemState{
         IDLE,   
-        MANUAL_CONTROL,           //X,Y axis speeds relative to field
+        MANUAL_CONTROL,
+        TRAJECTORY_FOLLOWING           //X,Y axis speeds relative to field
     }
 
     public enum WantedState{
         IDLE,
-        MANUAL_CONTROL
+        MANUAL_CONTROL,
+        TRAJECTORY_FOLLOWING
     }
 
     private static class PeriodicIO {
@@ -76,10 +75,6 @@ public class Drivetrain implements Subsystem {
         double VyCmd; //lateral speed
         double WzCmd; //rotational rate in radians/sec
         boolean robotOrientedModifier; //drive command modifier to set robot oriented translation control
-
-        double modifiedJoystickX;
-        double modifiedJoystickY;
-        double modifiedJoystickR;
 
         double limelightAngleError;
         double limelightDistance;
@@ -118,25 +113,35 @@ public class Drivetrain implements Subsystem {
     private double currentStateStartTime;
 
     private double[] autoDriveSpeeds = new double[2];
-    public SwerveModule[] mSwerveMods;   
+    public final static int Num_Modules = 4;
+    public SwerveModule[] mSwerveMods = new SwerveModule[Num_Modules];   
+
+    private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
+
+    private final SwerveDriveOdometry odometry; 
+    
+    public SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
     public Drivetrain(XboxController controller) {
         ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
         //yawCtrl.enableContinuousInput(-Math.PI, Math.PI);  //TODO check if Pigeon output rolls over 
 
+        
+        
         mSwerveMods = new SwerveModule[] {
         new SwerveModule(0, Constants.Swerve.Mod0.constants),
         new SwerveModule(1, Constants.Swerve.Mod1.constants),
         new SwerveModule(2, Constants.Swerve.Mod2.constants),
         new SwerveModule(3, Constants.Swerve.Mod3.constants)
         };
+        
+        odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
+
         this.controller = controller;
 
         resetModulesToAbsolute();
-        odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
         
-        //TODO TEMPORARY
-        resetOdometry();
+
     }
 
     @Override
@@ -146,6 +151,9 @@ public class Drivetrain implements Subsystem {
             default:
             case MANUAL_CONTROL:
                 newState = handleManualControl();
+                break;
+            case TRAJECTORY_FOLLOWING:
+                newState = handleTrajectoryFollowing();
                 break;
             case IDLE:
                 newState = handleManualControl();
@@ -161,14 +169,12 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void readPeriodicInputs(double timestamp) {
-        periodicIO.VxCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftY()*Math.abs(controller.getLeftY())) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.VyCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftX()*Math.abs(controller.getLeftX())) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()*Math.abs(controller.getRightX())) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
+        periodicIO.VxCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.VyCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-        periodicIO.modifiedJoystickX = -controller.getLeftX()*Math.abs(controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.modifiedJoystickY = -controller.getLeftY()*Math.abs(controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.modifiedJoystickR = -controller.getRightX()*Math.abs(controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
+
         
         double[] chassisVelocity = chassisSpeedsGetter();
         periodicIO.chassisVx = chassisVelocity[0];
@@ -178,23 +184,18 @@ public class Drivetrain implements Subsystem {
 
     }
 
-    private double[] chassisSpeedsGetter(){
-        double[] speeds = new double[4];
-        int i = 0;
-        for (SwerveModule m : mSwerveMods){
-            speeds[i] = m.getState().speedMetersPerSecond;
-            i++;
-        }
-        return speeds;
-    }
+    
 
     @Override
     public void writePeriodicOutputs(double timestamp)
     {
         SwerveModuleState[] moduleStates = new SwerveModuleState[4];
         switch(currentState){
+            case TRAJECTORY_FOLLOWING:
+                moduleStates = trajectoryStates;
+                break;
             case MANUAL_CONTROL:
-                moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
+                moduleStates = drive(periodicIO.VxCmd, periodicIO.VyCmd, -controller.getRightX()*.5, !periodicIO.robotOrientedModifier);
                 break;
             default:
             case IDLE:
@@ -205,21 +206,33 @@ public class Drivetrain implements Subsystem {
         setModuleStates(moduleStates);
         updateStateVariables(moduleStates);
     }
-/* 
+
     @Override
     public void periodic() {
         
     }
-*/
+
     private SystemState defaultStateChange() {
 		switch (wantedState){
             /*case IDLE:
                 return SystemState.IDLE;*/
+            case TRAJECTORY_FOLLOWING:
+				return SystemState.TRAJECTORY_FOLLOWING;
             default:
             case MANUAL_CONTROL:
                 return SystemState.MANUAL_CONTROL;
 		}
 	}
+
+    private double[] chassisSpeedsGetter(){
+        double[] speeds = new double[4];
+        int i = 0;
+        for (SwerveModule m : mSwerveMods){
+            speeds[i] = m.getState().speedMetersPerSecond;
+            i++;
+        }
+        return speeds;
+    }
 
     private void updateStateVariables(SwerveModuleState[] states)
     {
@@ -249,9 +262,10 @@ public class Drivetrain implements Subsystem {
     public String getId() {
         return "Drivetrain";
     }
-/* 
+
     @Override
     public void outputTelemetry(double timestamp) {
+        /* 
         SmartDashboard.putString("drivetrain/wantedStateAPI", this.wantedState.toString());
         SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
         SmartDashboard.putString("drivetrain/pose",odometry.getPoseMeters().toString());
@@ -272,7 +286,7 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putNumber("drivetrain/chassisVy", periodicIO.chassisVy);
         SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
         SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
-        
+        */
         for(SwerveModule mod : mSwerveMods){
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
@@ -280,10 +294,16 @@ public class Drivetrain implements Subsystem {
         }
         
     }
-*/
+
     public void setWantedState(WantedState wantedState)
     {
         this.wantedState = wantedState;
+    }
+
+    public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state){
+        zeroGyroscope();
+        //ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(), 100);
+        odometry.resetPosition(getYaw(), getModulePositions(), new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
     }
 
     public void zeroGyroscope() {
@@ -299,10 +319,16 @@ public class Drivetrain implements Subsystem {
         }
     } 
 
-
+    public void setModuleStatesFromTrajectory(SwerveModuleState[] states){
+        trajectoryStates = states;
+    }
     
     private SystemState handleManualControl(){
 
+        return defaultStateChange();
+    }
+
+    private SystemState handleTrajectoryFollowing(){
         return defaultStateChange();
     }
 
@@ -317,18 +343,17 @@ public class Drivetrain implements Subsystem {
     }
 
     private void updateOdometry(){
-
         odometry.update(getYaw(), getModulePositions());  
     }
 
     public void resetOdometry(){
         zeroGyroscope();
+        odometry.resetPosition(getYaw(), getModulePositions(), new Pose2d(0,0, new Rotation2d()));;
     }
 
     public SwerveDriveKinematics getKinematics() {
         return m_kinematics;
     }
-
 
     public void setAutoDriveSpeeds(double xSpeed, double ySpeed){
         autoDriveSpeeds[0] = xSpeed;
@@ -345,8 +370,8 @@ public class Drivetrain implements Subsystem {
 
     public SwerveModulePosition[] getModulePositions(){
         SwerveModulePosition[] positions = new SwerveModulePosition[4];
-        for(SwerveModule mod : mSwerveMods){
-            positions[mod.moduleNumber] = mod.getPosition();
+        for(int i = 0; i<4; i++){
+            positions[i] = mSwerveMods[i].getPosition();
         }
         return positions;
     }
