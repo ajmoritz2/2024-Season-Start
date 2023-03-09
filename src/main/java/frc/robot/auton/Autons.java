@@ -10,17 +10,24 @@ import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.auto.PIDConstants;
 import com.pathplanner.lib.auto.SwerveAutoBuilder;
 
+import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import frc.robot.auton.commands.PathPlannerCommand;
+import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Arm.SystemState;
+import frc.robot.subsystems.Drivetrain.WantedState;
+import frc.robot.auton.commands.*;
 
 public class Autons {
-    private static List<PathPlannerTrajectory> test = PathPlanner.loadPathGroup("Center1Part1", new PathConstraints(5, 4), new PathConstraints(1, 3));
-public static Command test(Drivetrain driveTrain){
+    private static List<PathPlannerTrajectory> test = PathPlanner.loadPathGroup("center", new PathConstraints(5, 4), new PathConstraints(1, 3));
+
+public static Command center(Drivetrain driveTrain, Arm arm, Intake intake){
 // This is just an example event map. It would be better to have a constant, global event map
 // in your code that will be used by all path following commands.
 HashMap<String, Command> eventMap = new HashMap<>();
@@ -45,8 +52,14 @@ Command fullAuto = autoBuilder.fullAuto(test);
     
     return new SequentialCommandGroup(
     new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
-    fullAuto.alongWith(new WaitCommand(20)),
-    new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.MANUAL_CONTROL))
+    new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
+    new WaitCommand(1.2),
+    new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
+    new WaitCommand(1),
+    new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
+    new WaitCommand(1),
+    fullAuto.alongWith(new WaitCommand(1.5)),
+    new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE))
     );
 }
 

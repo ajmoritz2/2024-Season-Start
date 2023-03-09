@@ -96,7 +96,7 @@ public class RobotContainer {
 	private void configureAuton() {
 		autonChooser = new SendableChooser<>();
 		//autonChooser.setDefaultOption("Do Nothing", new InstantCommand(() -> System.out.println("Doing nothing...")));
-		autonChooser.addOption("test", Autons.test(drivetrain));
+		autonChooser.addOption("test", Autons.center(drivetrain,arm,intake));
 		SmartDashboard.putData("auton/chooser",autonChooser);
 
 	}

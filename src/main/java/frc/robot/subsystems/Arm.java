@@ -37,7 +37,8 @@ public class Arm implements Subsystem {
         HIGH,
         MID,
         TRAVEL,
-        AUTON_MID
+        AUTON_MID,
+        AUTON_HIGH
     }
 
     private SystemState currentState = SystemState.NEUTRAL;
@@ -101,8 +102,8 @@ public class Arm implements Subsystem {
 		rotateMotorRight.config_kI(0, 0);
 		rotateMotorRight.config_kD(0, 0);
 
-        rotateMotorRight.configPeakOutputForward(0.5);
-        rotateMotorRight.configPeakOutputReverse(-0.5);
+        rotateMotorRight.configPeakOutputForward(0.3);
+        rotateMotorRight.configPeakOutputReverse(-0.3);
 
         feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
         liftMotor.setSensorPhase(true);
@@ -135,6 +136,9 @@ public class Arm implements Subsystem {
                 newState = handleManual();
                 break;
             case AUTON_MID:
+                newState = handleManual();
+                break;
+            case AUTON_HIGH:
                 newState = handleManual();
                 break;
          }
@@ -183,7 +187,7 @@ public class Arm implements Subsystem {
             setWantedState(SystemState.HIGH);
 
         if(controller.getR1ButtonPressed())
-            setWantedState(SystemState.AUTON_MID);
+            setWantedState(SystemState.AUTON_HIGH);
         if(controller.getR1ButtonReleased())
             setWantedState(SystemState.NEUTRAL);
     }
@@ -207,6 +211,10 @@ public class Arm implements Subsystem {
             case AUTON_MID:
                 configRotate(46080);
                 configExtend(39949);
+                break;
+            case AUTON_HIGH:
+                configRotate(41320);
+                configExtend(114256);
                 break;
             default:
             case NEUTRAL:

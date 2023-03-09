@@ -58,13 +58,15 @@ public class Drivetrain implements Subsystem {
     private enum SystemState{
         IDLE,   
         MANUAL_CONTROL,
-        TRAJECTORY_FOLLOWING           //X,Y axis speeds relative to field
+        TRAJECTORY_FOLLOWING,           //X,Y axis speeds relative to field
+        AUTO_BALANCE
     }
 
     public enum WantedState{
         IDLE,
         MANUAL_CONTROL,
-        TRAJECTORY_FOLLOWING
+        TRAJECTORY_FOLLOWING,
+        AUTO_BALANCE
     }
 
     private static class PeriodicIO {
@@ -156,6 +158,9 @@ public class Drivetrain implements Subsystem {
             case MANUAL_CONTROL:
                 newState = handleManualControl();
                 break;
+            case AUTO_BALANCE:
+                newState = handleManualControl();
+                break;
             case TRAJECTORY_FOLLOWING:
                 newState = handleTrajectoryFollowing();
                 break;
@@ -189,6 +194,11 @@ public class Drivetrain implements Subsystem {
         periodicIO.goalVx = chassisVelocity[2];
         periodicIO.goalVy = chassisVelocity[3];
 
+        if(controller.getAButtonPressed())
+            setWantedState(WantedState.AUTO_BALANCE);
+        if(controller.getAButtonReleased())
+            setWantedState(WantedState.MANUAL_CONTROL);
+
     }
 
     
@@ -201,8 +211,12 @@ public class Drivetrain implements Subsystem {
             case TRAJECTORY_FOLLOWING:
                 moduleStates = trajectoryStates;
                 break;
+            case AUTO_BALANCE:
+                moduleStates = autoBalance();
+                //System.out.println("IN balance");
+                break;
             case MANUAL_CONTROL:
-            moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
+                moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
                 break;
             default:
             case IDLE:
@@ -219,10 +233,39 @@ public class Drivetrain implements Subsystem {
         
     }
 
+    private SwerveModuleState[] autoBalance(){
+        // Uncomment the line below this to simulate the gyroscope axis with a controller joystick
+        // Double currentAngle = -1 * Robot.controller.getRawAxis(Constants.LEFT_VERTICAL_JOYSTICK_AXIS) * 45;
+        double currentAngle = getPitch();
+
+        double error = Constants.BEAM_BALANCED_GOAL_DEGREES - currentAngle;
+        double drivePower = -Math.min(Constants.BEAM_BALANACED_DRIVE_KP * error, 1)*.3;
+
+        // Our robot needed an extra push to drive up in reverse, probably due to weight imbalances
+        if (drivePower < 0) {
+        drivePower *= Constants.BACKWARDS_BALANCING_EXTRA_POWER_MULTIPLIER;
+        }
+
+        // Limit the max power
+        if (Math.abs(drivePower) > 0.6) {
+        drivePower = Math.copySign(0.6, drivePower);
+        }
+        /* 
+    System.out.println("Current Angle: " + currentAngle);
+    System.out.println("Error " + error);
+    System.out.println("Drive Power: " + drivePower);
+*/
+        return drive(drivePower, 0.0, 0.0, true);
+ 
+        
+    }
+
     private SystemState defaultStateChange() {
 		switch (wantedState){
             /*case IDLE:
                 return SystemState.IDLE;*/
+            case AUTO_BALANCE:
+                return SystemState.AUTO_BALANCE;
             case TRAJECTORY_FOLLOWING:
 				return SystemState.TRAJECTORY_FOLLOWING;
             default:
@@ -416,6 +459,12 @@ public class Drivetrain implements Subsystem {
        //    // We have to invert the angle of the NavX so that rotating the robot counter-clockwise makes the angle increase.
           return Rotation2d.fromDegrees(360.0 - ahrs.getYaw());
     }
+
+    public double getPitch() {
+        //
+        //    // We have to invert the angle of the NavX so that rotating the robot counter-clockwise makes the angle increase.
+           return ahrs.getPitch();
+     }
 
     @Override
     public boolean checkSystem() {
