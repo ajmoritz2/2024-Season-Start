@@ -37,7 +37,8 @@ public class Arm implements Subsystem {
         HIGH,
         MID,
         TRAVEL,
-        START;
+        AUTON_MID,
+        AUTON_HIGH
     }
 
     private SystemState currentState = SystemState.NEUTRAL;
@@ -62,7 +63,7 @@ public class Arm implements Subsystem {
 
         liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR, "MANIPbus");
         rotateMotorRight = new TalonFX(Constants.Arm.ROTATEMOTOR2, "MANIPbus");
-        //rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
+        rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
         armEncoder = new CANCoder(Constants.Arm.EXTENDENCODER, "MANIPbus");
         rotateEncoder = new CANCoder(Constants.Arm.ROTATEENCODER, "MANIPbus");
         liftMotor.configFactoryDefault();
@@ -91,9 +92,10 @@ public class Arm implements Subsystem {
 		rotateMotorLeft.config_kP(0,2.4); //2.4 5% overshoot
 		rotateMotorLeft.config_kI(0, 0);
 		rotateMotorLeft.config_kD(0, 0);
-        rotateMotorLeft.configPeakOutputForward(0.4);
-        rotateMotorLeft.configPeakOutputReverse(-0.4);
-        */
+
+        rotateMotorLeft.configPeakOutputForward(0.2);
+        rotateMotorLeft.configPeakOutputReverse(-0.2);
+
         rotateMotorRight.selectProfileSlot(0, 0);
 		rotateMotorRight.config_kF(0, 0.125);
 		rotateMotorRight.config_kP(0,2.4); //2.4 5% overshoot
@@ -127,12 +129,9 @@ public class Arm implements Subsystem {
              case HUMAN_FOLD:
                  newState = handleManual();
                  break;
-             case MID:
+             case PLACING:
                  newState = handleManual();
                  break;
-             case HIGH:
-                newState = handleManual();
-                break;
          }
 
         if (wantedState != currentState) {
@@ -175,9 +174,6 @@ public class Arm implements Subsystem {
         if(controller.getTriangleButtonPressed())
             setWantedState(SystemState.NEUTRAL);
 
-        if(controller.getSquareButtonPressed())
-            setWantedState(SystemState.HIGH);
-
     }
 
     @Override
@@ -185,16 +181,14 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-86190); //target -88190
-                configExtend(0);
+                configRotate(-80000); //target -75200
                 break;
-             case MID:
-                configRotate(-46080); //target -46080
-                configExtend(39949); //target 39949
-                break;
-            case HIGH:
-                configRotate(-43320); //target-45320
-                configExtend(116256); //traget 116256
+            //case HUMAN_FOLD:
+              //  configRotate(-100000);
+              //  break;
+             case PLACING:
+                configRotate(-50000);
+                configExtend(50000);
                 break;
             default:
             case NEUTRAL:
@@ -217,7 +211,7 @@ public class Arm implements Subsystem {
         SmartDashboard.putBoolean("ArmLimitSwitch", armLimitSwitch.get());
         SmartDashboard.putBoolean("RotateLimitSwitch", rotateLimitSwitch.get());
         SmartDashboard.putNumber("Current Lift Pos", liftMotor.getSelectedSensorPosition());
-        //SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
+        SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
     }
 
     private SystemState handleManual(){

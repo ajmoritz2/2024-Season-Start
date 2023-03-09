@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.auton.Autons;
 import frc.robot.loops.SubsystemManager;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.Arm.SystemState;
@@ -35,8 +36,8 @@ public class RobotContainer {
 
 	private final SubsystemManager manager;
 
-	private final Drivetrain drivetrain;
-	private final Arm arm;
+	public final Drivetrain drivetrain;
+	public final Arm arm;
 	private final Intake intake;
 
 	private SendableChooser<Command> autonChooser;
@@ -93,7 +94,10 @@ public class RobotContainer {
 	}
 
 	private void configureAuton() {
-		
+		autonChooser = new SendableChooser<>();
+		//autonChooser.setDefaultOption("Do Nothing", new InstantCommand(() -> System.out.println("Doing nothing...")));
+		autonChooser.addOption("test", Autons.center(drivetrain,arm,intake));
+		SmartDashboard.putData("auton/chooser",autonChooser);
 
 	}
 

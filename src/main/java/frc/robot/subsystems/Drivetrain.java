@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import com.pathplanner.lib.PathPlannerTrajectory;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -54,19 +55,19 @@ public class Drivetrain implements Subsystem {
     private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
     private double gyroOffset;
 
-    private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
-
-    public SwerveDriveOdometry odometry; 
-    //public SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
     private enum SystemState{
         IDLE,   
-        MANUAL_CONTROL,           //X,Y axis speeds relative to field
+        MANUAL_CONTROL,
+        TRAJECTORY_FOLLOWING,           //X,Y axis speeds relative to field
+        AUTO_BALANCE
     }
 
     public enum WantedState{
         IDLE,
-        MANUAL_CONTROL
+        MANUAL_CONTROL,
+        TRAJECTORY_FOLLOWING,
+        AUTO_BALANCE
     }
 
     private static class PeriodicIO {
@@ -119,25 +120,35 @@ public class Drivetrain implements Subsystem {
     private double currentStateStartTime;
 
     private double[] autoDriveSpeeds = new double[2];
-    public SwerveModule[] mSwerveMods;   
+    public final static int Num_Modules = 4;
+    public SwerveModule[] mSwerveMods = new SwerveModule[Num_Modules];   
+
+    private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
+
+    private final SwerveDriveOdometry odometry; 
+    
+    public SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
     public Drivetrain(XboxController controller) {
         ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
         //yawCtrl.enableContinuousInput(-Math.PI, Math.PI);  //TODO check if Pigeon output rolls over 
 
+        
+        
         mSwerveMods = new SwerveModule[] {
         new SwerveModule(0, Constants.Swerve.Mod0.constants),
         new SwerveModule(1, Constants.Swerve.Mod1.constants),
         new SwerveModule(2, Constants.Swerve.Mod2.constants),
         new SwerveModule(3, Constants.Swerve.Mod3.constants)
         };
+        
+        odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
+
         this.controller = controller;
 
         resetModulesToAbsolute();
-        odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
         
-        //TODO TEMPORARY
-        resetOdometry();
+
     }
 
     @Override
@@ -147,6 +158,12 @@ public class Drivetrain implements Subsystem {
             default:
             case MANUAL_CONTROL:
                 newState = handleManualControl();
+                break;
+            case AUTO_BALANCE:
+                newState = handleManualControl();
+                break;
+            case TRAJECTORY_FOLLOWING:
+                newState = handleTrajectoryFollowing();
                 break;
             case IDLE:
                 newState = handleManualControl();
@@ -171,29 +188,34 @@ public class Drivetrain implements Subsystem {
         periodicIO.modifiedJoystickY = -controller.getLeftY()*Math.abs(controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
         periodicIO.modifiedJoystickR = -controller.getRightX()*Math.abs(controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         
+
         double[] chassisVelocity = chassisSpeedsGetter();
         periodicIO.chassisVx = chassisVelocity[0];
         periodicIO.chassisVy = chassisVelocity[1];
         periodicIO.goalVx = chassisVelocity[2];
         periodicIO.goalVy = chassisVelocity[3];
 
+        if(controller.getAButtonPressed())
+            setWantedState(WantedState.AUTO_BALANCE);
+        if(controller.getAButtonReleased())
+            setWantedState(WantedState.MANUAL_CONTROL);
+
     }
 
-    private double[] chassisSpeedsGetter(){
-        double[] speeds = new double[4];
-        int i = 0;
-        for (SwerveModule m : mSwerveMods){
-            speeds[i] = m.getState().speedMetersPerSecond;
-            i++;
-        }
-        return speeds;
-    }
+    
 
     @Override
     public void writePeriodicOutputs(double timestamp)
     {
         SwerveModuleState[] moduleStates = new SwerveModuleState[4];
         switch(currentState){
+            case TRAJECTORY_FOLLOWING:
+                moduleStates = trajectoryStates;
+                break;
+            case AUTO_BALANCE:
+                moduleStates = autoBalance();
+                //System.out.println("IN balance");
+                break;
             case MANUAL_CONTROL:
                 moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
                 break;
@@ -206,21 +228,62 @@ public class Drivetrain implements Subsystem {
         setModuleStates(moduleStates);
         updateStateVariables(moduleStates);
     }
-/* 
+
     @Override
     public void periodic() {
         
     }
+
+    private SwerveModuleState[] autoBalance(){
+        // Uncomment the line below this to simulate the gyroscope axis with a controller joystick
+        // Double currentAngle = -1 * Robot.controller.getRawAxis(Constants.LEFT_VERTICAL_JOYSTICK_AXIS) * 45;
+        double currentAngle = getPitch();
+
+        double error = Constants.BEAM_BALANCED_GOAL_DEGREES - currentAngle;
+        double drivePower = -Math.min(Constants.BEAM_BALANACED_DRIVE_KP * error, 1)*.3;
+
+        // Our robot needed an extra push to drive up in reverse, probably due to weight imbalances
+        if (drivePower < 0) {
+        drivePower *= Constants.BACKWARDS_BALANCING_EXTRA_POWER_MULTIPLIER;
+        }
+
+        // Limit the max power
+        if (Math.abs(drivePower) > 0.6) {
+        drivePower = Math.copySign(0.6, drivePower);
+        }
+        /* 
+    System.out.println("Current Angle: " + currentAngle);
+    System.out.println("Error " + error);
+    System.out.println("Drive Power: " + drivePower);
 */
+        return drive(drivePower, 0.0, 0.0, true);
+ 
+        
+    }
+
     private SystemState defaultStateChange() {
 		switch (wantedState){
             /*case IDLE:
                 return SystemState.IDLE;*/
+            case AUTO_BALANCE:
+                return SystemState.AUTO_BALANCE;
+            case TRAJECTORY_FOLLOWING:
+				return SystemState.TRAJECTORY_FOLLOWING;
             default:
             case MANUAL_CONTROL:
                 return SystemState.MANUAL_CONTROL;
 		}
 	}
+
+    private double[] chassisSpeedsGetter(){
+        double[] speeds = new double[4];
+        int i = 0;
+        for (SwerveModule m : mSwerveMods){
+            speeds[i] = m.getState().speedMetersPerSecond;
+            i++;
+        }
+        return speeds;
+    }
 
     private void updateStateVariables(SwerveModuleState[] states)
     {
@@ -250,9 +313,10 @@ public class Drivetrain implements Subsystem {
     public String getId() {
         return "Drivetrain";
     }
-/* 
+
     @Override
     public void outputTelemetry(double timestamp) {
+        /* 
         SmartDashboard.putString("drivetrain/wantedStateAPI", this.wantedState.toString());
         SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
         SmartDashboard.putString("drivetrain/pose",odometry.getPoseMeters().toString());
@@ -273,7 +337,9 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putNumber("drivetrain/chassisVy", periodicIO.chassisVy);
         SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
         SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
-        
+        */
+        SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
+        SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
         for(SwerveModule mod : mSwerveMods){
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
@@ -281,10 +347,16 @@ public class Drivetrain implements Subsystem {
         }
         
     }
-*/
+
     public void setWantedState(WantedState wantedState)
     {
         this.wantedState = wantedState;
+    }
+
+    public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state){
+        zeroGyroscope();
+        //ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(), 100);
+        odometry.resetPosition(getYaw(), getModulePositions(), new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
     }
 
     public void zeroGyroscope() {
@@ -300,10 +372,16 @@ public class Drivetrain implements Subsystem {
         }
     } 
 
-
+    public void setModuleStatesFromTrajectory(SwerveModuleState[] states){
+        trajectoryStates = states;
+    }
     
     private SystemState handleManualControl(){
 
+        return defaultStateChange();
+    }
+
+    private SystemState handleTrajectoryFollowing(){
         return defaultStateChange();
     }
 
@@ -316,20 +394,23 @@ public class Drivetrain implements Subsystem {
     public Pose2d getPose() {
         return odometry.getPoseMeters();
     }
+    public void resetPose(Pose2d odo){
+        odometry.resetPosition(getYaw(), getModulePositions(), odo);;
+    }
+
 
     private void updateOdometry(){
-
         odometry.update(getYaw(), getModulePositions());  
     }
 
     public void resetOdometry(){
         zeroGyroscope();
+        odometry.resetPosition(getYaw(), getModulePositions(), new Pose2d(0,0, new Rotation2d()));;
     }
 
     public SwerveDriveKinematics getKinematics() {
         return m_kinematics;
     }
-
 
     public void setAutoDriveSpeeds(double xSpeed, double ySpeed){
         autoDriveSpeeds[0] = xSpeed;
@@ -346,8 +427,8 @@ public class Drivetrain implements Subsystem {
 
     public SwerveModulePosition[] getModulePositions(){
         SwerveModulePosition[] positions = new SwerveModulePosition[4];
-        for(SwerveModule mod : mSwerveMods){
-            positions[mod.moduleNumber] = mod.getPosition();
+        for(int i = 0; i<4; i++){
+            positions[i] = mSwerveMods[i].getPosition();
         }
         return positions;
     }
@@ -379,6 +460,12 @@ public class Drivetrain implements Subsystem {
        //    // We have to invert the angle of the NavX so that rotating the robot counter-clockwise makes the angle increase.
           return Rotation2d.fromDegrees(360.0 - ahrs.getYaw());
     }
+
+    public double getPitch() {
+        //
+        //    // We have to invert the angle of the NavX so that rotating the robot counter-clockwise makes the angle increase.
+           return ahrs.getPitch();
+     }
 
     @Override
     public boolean checkSystem() {

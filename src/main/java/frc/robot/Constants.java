@@ -13,6 +13,11 @@ import frc.robot.utils.SwerveModuleConstants;
 public final class Constants {
     public static final double stickDeadband = 0.1;
 
+    public static final double BEAM_BALANACED_DRIVE_KP = 0.05; // P (Proportional) constant of a PID loop 0.015
+    public static final double BEAM_BALANCED_GOAL_DEGREES = 0;
+    public static final double BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES = 1;
+    public static final double BACKWARDS_BALANCING_EXTRA_POWER_MULTIPLIER = 1;
+
     public static final class Swerve {
        
         public static final boolean invertGyro = false; // Always ensure Gyro is CCW+ CW-
@@ -21,8 +26,8 @@ public final class Constants {
             COTSFalconSwerveConstants.SDSMK4(COTSFalconSwerveConstants.driveGearRatios.SDSMK4_L2);
 
         /* Drivetrain Constants */
-        public static final double trackWidth = Units.inchesToMeters(20.5); //TODO: This must be tuned to specific robot
-        public static final double wheelBase = Units.inchesToMeters(26.5); //TODO: This must be tuned to specific robot
+        public static final double trackWidth = Units.inchesToMeters(17); //TODO: This must be tuned to specific robot 
+        public static final double wheelBase = Units.inchesToMeters(20); //TODO: This must be tuned to specific robot
         public static final double wheelCircumference = chosenModule.wheelCircumference;
 
         /* Swerve Kinematics 
@@ -85,7 +90,7 @@ public final class Constants {
         public static final double maxAngularVelocity = 10.0; //TODO: This must be tuned to specific robot
 
         /* Neutral Modes */
-        public static final NeutralMode angleNeutralMode = NeutralMode.Coast;
+        public static final NeutralMode angleNeutralMode = NeutralMode.Brake;
         public static final NeutralMode driveNeutralMode = NeutralMode.Brake;
 
         /* Module Specific Constants */
@@ -185,7 +190,7 @@ public final class Constants {
          */
     }
 
-    public class Arm {
+    public class ARM {
         public static final int EXTENDMOTOR = 13;
         public static final int ROTATEMOTOR1 = 11;
         public static final int ROTATEMOTOR2 = 12;
