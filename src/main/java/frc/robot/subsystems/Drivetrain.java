@@ -76,6 +76,10 @@ public class Drivetrain implements Subsystem {
         double WzCmd; //rotational rate in radians/sec
         boolean robotOrientedModifier; //drive command modifier to set robot oriented translation control
 
+        double modifiedJoystickX;
+        double modifiedJoystickY;
+        double modifiedJoystickR;
+
         double limelightAngleError;
         double limelightDistance;
 
@@ -174,8 +178,11 @@ public class Drivetrain implements Subsystem {
         periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-
+        periodicIO.modifiedJoystickX = -controller.getLeftX()*Math.abs(controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.modifiedJoystickY = -controller.getLeftY()*Math.abs(controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.modifiedJoystickR = -controller.getRightX()*Math.abs(controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         
+
         double[] chassisVelocity = chassisSpeedsGetter();
         periodicIO.chassisVx = chassisVelocity[0];
         periodicIO.chassisVy = chassisVelocity[1];
@@ -195,7 +202,7 @@ public class Drivetrain implements Subsystem {
                 moduleStates = trajectoryStates;
                 break;
             case MANUAL_CONTROL:
-                moduleStates = drive(periodicIO.VxCmd, periodicIO.VyCmd, -controller.getRightX()*.5, !periodicIO.robotOrientedModifier);
+            moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
                 break;
             default:
             case IDLE:
@@ -287,6 +294,8 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
         SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
         */
+        SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
+        SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
         for(SwerveModule mod : mSwerveMods){
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
