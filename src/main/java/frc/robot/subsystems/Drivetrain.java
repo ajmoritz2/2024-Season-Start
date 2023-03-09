@@ -350,6 +350,10 @@ public class Drivetrain implements Subsystem {
     public Pose2d getPose() {
         return odometry.getPoseMeters();
     }
+    public void resetPose(Pose2d odo){
+        odometry.resetPosition(getYaw(), getModulePositions(), odo);;
+    }
+
 
     private void updateOdometry(){
         odometry.update(getYaw(), getModulePositions());  

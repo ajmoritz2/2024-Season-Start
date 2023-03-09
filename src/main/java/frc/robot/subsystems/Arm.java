@@ -184,6 +184,8 @@ public class Arm implements Subsystem {
 
         if(controller.getR1ButtonPressed())
             setWantedState(SystemState.AUTON_MID);
+        if(controller.getR1ButtonReleased())
+            setWantedState(SystemState.NEUTRAL);
     }
 
     @Override
@@ -205,6 +207,7 @@ public class Arm implements Subsystem {
             case AUTON_MID:
                 configRotate(46080);
                 configExtend(39949);
+                break;
             default:
             case NEUTRAL:
                 configRotate(0);

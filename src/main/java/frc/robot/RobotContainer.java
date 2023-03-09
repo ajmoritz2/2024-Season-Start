@@ -36,7 +36,7 @@ public class RobotContainer {
 
 	private final SubsystemManager manager;
 
-	private final Drivetrain drivetrain;
+	public final Drivetrain drivetrain;
 	public final Arm arm;
 	private final Intake intake;
 
@@ -96,7 +96,7 @@ public class RobotContainer {
 	private void configureAuton() {
 		autonChooser = new SendableChooser<>();
 		//autonChooser.setDefaultOption("Do Nothing", new InstantCommand(() -> System.out.println("Doing nothing...")));
-		autonChooser.addOption("test", Autons.test(drivetrain, arm, intake));
+		autonChooser.addOption("test", Autons.test(drivetrain));
 		SmartDashboard.putData("auton/chooser",autonChooser);
 
 	}
