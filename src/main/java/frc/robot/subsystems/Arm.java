@@ -61,11 +61,11 @@ public class Arm implements Subsystem {
         this.intake = intake;
         this.controller = controller;
 
-        liftMotor = new TalonFX(Constants.Arm.EXTENDMOTOR, "MANIPbus");
-        rotateMotorRight = new TalonFX(Constants.Arm.ROTATEMOTOR2, "MANIPbus");
-        rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
-        armEncoder = new CANCoder(Constants.Arm.EXTENDENCODER, "MANIPbus");
-        rotateEncoder = new CANCoder(Constants.Arm.ROTATEENCODER, "MANIPbus");
+        liftMotor = new TalonFX(Constants.ARM.EXTENDMOTOR, "MANIPbus");
+        rotateMotorRight = new TalonFX(Constants.ARM.ROTATEMOTOR2, "MANIPbus");
+        //rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
+        armEncoder = new CANCoder(Constants.ARM.EXTENDENCODER, "MANIPbus");
+        rotateEncoder = new CANCoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
         liftMotor.configFactoryDefault();
         //rotateMotorLeft.configFactoryDefault();
         rotateMotorRight.configFactoryDefault();
@@ -92,10 +92,9 @@ public class Arm implements Subsystem {
 		rotateMotorLeft.config_kP(0,2.4); //2.4 5% overshoot
 		rotateMotorLeft.config_kI(0, 0);
 		rotateMotorLeft.config_kD(0, 0);
-
-        rotateMotorLeft.configPeakOutputForward(0.2);
-        rotateMotorLeft.configPeakOutputReverse(-0.2);
-
+        rotateMotorLeft.configPeakOutputForward(0.4);
+        rotateMotorLeft.configPeakOutputReverse(-0.4);
+        */
         rotateMotorRight.selectProfileSlot(0, 0);
 		rotateMotorRight.config_kF(0, 0.125);
 		rotateMotorRight.config_kP(0,2.4); //2.4 5% overshoot
@@ -129,9 +128,18 @@ public class Arm implements Subsystem {
              case HUMAN_FOLD:
                  newState = handleManual();
                  break;
-             case PLACING:
+             case MID:
                  newState = handleManual();
                  break;
+             case HIGH:
+                newState = handleManual();
+                break;
+            case AUTON_MID:
+                newState = handleManual();
+                break;
+            case AUTON_HIGH:
+                newState = handleManual();
+                break;
          }
 
         if (wantedState != currentState) {
@@ -174,6 +182,13 @@ public class Arm implements Subsystem {
         if(controller.getTriangleButtonPressed())
             setWantedState(SystemState.NEUTRAL);
 
+        if(controller.getSquareButtonPressed())
+            setWantedState(SystemState.HIGH);
+
+        if(controller.getR1ButtonPressed())
+            setWantedState(SystemState.AUTON_HIGH);
+        if(controller.getR1ButtonReleased())
+            setWantedState(SystemState.NEUTRAL);
     }
 
     @Override
@@ -181,14 +196,24 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-80000); //target -75200
+                configRotate(-86190); //target -88190
+                configExtend(0);
                 break;
-            //case HUMAN_FOLD:
-              //  configRotate(-100000);
-              //  break;
-             case PLACING:
-                configRotate(-50000);
-                configExtend(50000);
+             case MID:
+                configRotate(-46080); //target -46080
+                configExtend(39949); //target 39949
+                break;
+            case HIGH:
+                configRotate(-43320); //target-45320
+                configExtend(116256); //traget 116256
+                break;
+            case AUTON_MID:
+                configRotate(46080);
+                configExtend(39949);
+                break;
+            case AUTON_HIGH:
+                configRotate(41320);
+                configExtend(114256);
                 break;
             default:
             case NEUTRAL:
@@ -211,7 +236,7 @@ public class Arm implements Subsystem {
         SmartDashboard.putBoolean("ArmLimitSwitch", armLimitSwitch.get());
         SmartDashboard.putBoolean("RotateLimitSwitch", rotateLimitSwitch.get());
         SmartDashboard.putNumber("Current Lift Pos", liftMotor.getSelectedSensorPosition());
-        SmartDashboard.putNumber("Current Rot Pos", rotateMotorLeft.getSelectedSensorPosition());
+        SmartDashboard.putNumber("Current Rot Pos", rotateMotorRight.getSelectedSensorPosition());
     }
 
     private SystemState handleManual(){
