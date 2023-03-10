@@ -249,7 +249,6 @@ public class Drivetrain implements Subsystem {
         // TODO: Cap the angles given so we never calculate above a certain value.
 
         double pitchAngleDeg = ahrs.getPitch()- Constants.BALANCED_OFFESET;
-        double rollAngleDeg = ahrs.getRoll();
 
         double xAxisRate = 0; 
         double yAxisRate = 0;
@@ -259,11 +258,7 @@ public class Drivetrain implements Subsystem {
         } else if (!balancedX && Math.abs(pitchAngleDeg) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
             balancedX = true;
         }
-        if (Math.abs(pitchAngleDeg) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && !balancedY){
-            balancedY = true;
-        } else if (balancedY && Math.abs(pitchAngleDeg) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
-            balancedY = false;
-        }
+
 
         if (!balancedX && pitchAngleDeg > 0) {
 
@@ -276,14 +271,6 @@ public class Drivetrain implements Subsystem {
             double pitchAngleRadians = pitchAngleDeg * (Math.PI / 180.0);
             xAxisRate =  Math.abs(Math.sin(pitchAngleRadians))*-1;
         }
-
-        if (balancedY) {
-            double rollAngleRadians = rollAngleDeg * (Math.PI / 180.0);
-            yAxisRate = Math.sin(rollAngleRadians) * -1;
-        }
-
-        // if (balancedX && balancedY)
-        //     setWantedState(WantedState.MANUAL_CONTROL);
 
         return drive(xAxisRate*Constants.BALANCEDMAXSPEED, yAxisRate*Constants.BALANCEDMAXSPEED, 0.0, true);
  
