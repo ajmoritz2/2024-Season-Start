@@ -129,6 +129,7 @@ public class Drivetrain implements Subsystem {
     public SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
     private boolean balancedX = false, balancedY = false;
+    private boolean crawling = false;
 
     public Drivetrain(XboxController controller) {
         ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
@@ -180,14 +181,15 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void readPeriodicInputs(double timestamp) {
+
         periodicIO.VxCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
         periodicIO.VyCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
         periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-        periodicIO.modifiedJoystickX = -controller.getLeftX()*Math.abs(controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.modifiedJoystickY = -controller.getLeftY()*Math.abs(controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.modifiedJoystickR = -controller.getRightX()*Math.abs(controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
+        periodicIO.modifiedJoystickX = -controller.getLeftX()*Math.abs(controller.getLeftX()) * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
+        periodicIO.modifiedJoystickY = -controller.getLeftY()*Math.abs(controller.getLeftY()) * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
+        periodicIO.modifiedJoystickR = -controller.getRightX()*Math.abs(controller.getRightX()) * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND);
         
 
         double[] chassisVelocity = chassisSpeedsGetter();
@@ -200,6 +202,7 @@ public class Drivetrain implements Subsystem {
             setWantedState(WantedState.AUTO_BALANCE);
         if(controller.getAButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
+        crawling = controller.getRightBumper();
 
     }
 
@@ -235,9 +238,16 @@ public class Drivetrain implements Subsystem {
         
     }
 
+    private double halfWhenCrawl(double val){
+        return (crawling) ? val/2 : val;
+    }
+
     private SwerveModuleState[] autoBalance(){
         // Uncomment the line below this to simulate the gyroscope axis with a controller joystick
         // Double currentAngle = -1 * Robot.controller.getRawAxis(Constants.LEFT_VERTICAL_JOYSTICK_AXIS) * 45;
+
+        // TODO: Cap the angles given so we never calculate above a certain value.
+
         double pitchAngleDeg = ahrs.getPitch()- Constants.BALANCED_OFFESET;
         double rollAngleDeg = ahrs.getRoll();
 
@@ -335,6 +345,7 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp) {
+        
         /* 
         SmartDashboard.putString("drivetrain/wantedStateAPI", this.wantedState.toString());
         SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
@@ -357,14 +368,14 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
         SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
         */
-        SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
-        SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
-        SmartDashboard.putNumber("PITCH", ahrs.getPitch()-Constants.BALANCED_OFFESET);
-        for(SwerveModule mod : mSwerveMods){
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);    
-        }
+        // SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
+        // SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
+        // SmartDashboard.putNumber("PITCH", ahrs.getPitch()-Constants.BALANCED_OFFESET);
+        // for(SwerveModule mod : mSwerveMods){
+        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
+        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
+        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);    
+        // }
         
     }
 
