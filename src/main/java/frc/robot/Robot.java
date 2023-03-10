@@ -33,6 +33,9 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
     m_robotContainer.startSubsystemThreads();
 
+    for (String key : SmartDashboard.getKeys()){
+      SmartDashboard.clearPersistent(key);
+    }
 
     m_robotContainer.arm.zeroSensors();
   }
