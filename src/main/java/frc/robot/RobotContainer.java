@@ -39,6 +39,7 @@ public class RobotContainer {
 	public final Drivetrain drivetrain;
 	public final Arm arm;
 	private final Intake intake;
+	private final Limelight limelight;
 
 	private SendableChooser<Command> autonChooser;
 
@@ -64,10 +65,11 @@ public class RobotContainer {
 		intake = new Intake(operatorController);
 		arm = new Arm(operatorController,intake);
 		drivetrain = new Drivetrain(driverController);
+		limelight = new Limelight(driverController);
 		
 		manager = new SubsystemManager(0.02);
 
-		manager.setSubsystems(drivetrain, arm, intake);
+		manager.setSubsystems(drivetrain, arm, intake, limelight);
 
 
 		addressButtons();
@@ -96,7 +98,9 @@ public class RobotContainer {
 	private void configureAuton() {
 		autonChooser = new SendableChooser<>();
 		//autonChooser.setDefaultOption("Do Nothing", new InstantCommand(() -> System.out.println("Doing nothing...")));
-		autonChooser.addOption("test", Autons.center(drivetrain,arm,intake));
+		autonChooser.addOption("center", Autons.center(drivetrain,arm,intake));
+		autonChooser.addOption("clear", Autons.clear(drivetrain, arm, intake));
+		autonChooser.addOption("wireCover", Autons.wireCover(drivetrain, arm, intake));
 		SmartDashboard.putData("auton/chooser",autonChooser);
 
 	}

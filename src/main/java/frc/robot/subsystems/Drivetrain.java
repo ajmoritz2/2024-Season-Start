@@ -129,6 +129,8 @@ public class Drivetrain implements Subsystem {
     
     public SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
+    private boolean balancedX = false, balancedY = false;
+
     public Drivetrain(XboxController controller) {
         ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
         //yawCtrl.enableContinuousInput(-Math.PI, Math.PI);  //TODO check if Pigeon output rolls over 
@@ -237,26 +239,44 @@ public class Drivetrain implements Subsystem {
     private SwerveModuleState[] autoBalance(){
         // Uncomment the line below this to simulate the gyroscope axis with a controller joystick
         // Double currentAngle = -1 * Robot.controller.getRawAxis(Constants.LEFT_VERTICAL_JOYSTICK_AXIS) * 45;
-        double currentAngle = getPitch();
+        double pitchAngleDeg = ahrs.getPitch()- Constants.BALANCED_OFFESET;
+        double rollAngleDeg = ahrs.getRoll();
 
-        double error = Constants.BEAM_BALANCED_GOAL_DEGREES - currentAngle;
-        double drivePower = -Math.min(Constants.BEAM_BALANACED_DRIVE_KP * error, 1)*.3;
-
-        // Our robot needed an extra push to drive up in reverse, probably due to weight imbalances
-        if (drivePower < 0) {
-        drivePower *= Constants.BACKWARDS_BALANCING_EXTRA_POWER_MULTIPLIER;
+        double xAxisRate = 0; 
+        double yAxisRate = 0;
+        
+        if (Math.abs(pitchAngleDeg) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && balancedX){
+            balancedX = false;
+        } else if (!balancedX && Math.abs(pitchAngleDeg) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
+            balancedX = true;
+        }
+        if (Math.abs(pitchAngleDeg) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && !balancedY){
+            balancedY = true;
+        } else if (balancedY && Math.abs(pitchAngleDeg) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
+            balancedY = false;
         }
 
-        // Limit the max power
-        if (Math.abs(drivePower) > 0.6) {
-        drivePower = Math.copySign(0.6, drivePower);
+        if (!balancedX && ahrs.getPitch() > 0) {
+
+            double pitchAngleRadians = pitchAngleDeg * (Math.PI / 180.0);
+            xAxisRate = Math.abs(Math.sin(pitchAngleRadians));
         }
-        /* 
-    System.out.println("Current Angle: " + currentAngle);
-    System.out.println("Error " + error);
-    System.out.println("Drive Power: " + drivePower);
-*/
-        return drive(drivePower, 0.0, 0.0, true);
+
+        if (!balancedX && ahrs.getPitch() < 0) {
+
+            double pitchAngleRadians = pitchAngleDeg * (Math.PI / 180.0);
+            xAxisRate =  Math.abs(Math.sin(pitchAngleRadians))*-1;
+        }
+
+        if (balancedY) {
+            double rollAngleRadians = rollAngleDeg * (Math.PI / 180.0);
+            yAxisRate = Math.sin(rollAngleRadians) * -1;
+        }
+
+        // if (balancedX && balancedY)
+        //     setWantedState(WantedState.MANUAL_CONTROL);
+
+        return drive(xAxisRate*Constants.BALANCEDMAXSPEED, yAxisRate*Constants.BALANCEDMAXSPEED, 0.0, true);
  
         
     }
@@ -340,6 +360,7 @@ public class Drivetrain implements Subsystem {
         */
         SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
         SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
+        SmartDashboard.putNumber("PITCH", ahrs.getPitch()-Constants.BALANCED_OFFESET);
         for(SwerveModule mod : mSwerveMods){
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
@@ -361,6 +382,7 @@ public class Drivetrain implements Subsystem {
 
     public void zeroGyroscope() {
         ahrs.zeroYaw();
+    
         gyroOffset = 0;
     }
 
