@@ -12,6 +12,7 @@ import com.pathplanner.lib.auto.SwerveAutoBuilder;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
@@ -25,9 +26,9 @@ import frc.robot.subsystems.Drivetrain.WantedState;
 import frc.robot.auton.commands.*;
 
 public class Autons {
-    private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("center", new PathConstraints(5, 4), new PathConstraints(1, 3));
-    private static List<PathPlannerTrajectory> clear = PathPlanner.loadPathGroup("Clear", new PathConstraints(5, 4));
-    private static List<PathPlannerTrajectory> wireCover = PathPlanner.loadPathGroup("WireCover", new PathConstraints(5, 4));
+    private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("center", new PathConstraints(5, 4));
+    private static List<PathPlannerTrajectory> clear = PathPlanner.loadPathGroup("Clear", new PathConstraints(2.5, 3));
+    private static List<PathPlannerTrajectory> wireCover = PathPlanner.loadPathGroup("WireCover", new PathConstraints(2.5, 3));
     
     public static Command center(Drivetrain driveTrain, Arm arm, Intake intake){
         // This is just an example event map. It would be better to have a constant, global event map
@@ -60,7 +61,9 @@ public class Autons {
                 new WaitCommand(1),
                 new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
                 new WaitCommand(1),
-                fullAuto.alongWith(new WaitCommand(1.5)),
+                new InstantCommand(()-> driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING)),
+                fullAuto.alongWith(new WaitCommand(2)),
+                new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE))
             );
     }
@@ -96,6 +99,7 @@ public class Autons {
                 new WaitCommand(1),
                 new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
                 new WaitCommand(1),
+                new InstantCommand(()-> driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING)),
                 fullAuto.alongWith(new WaitCommand(5)),
                 new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE))
             );
@@ -155,7 +159,6 @@ public class Autons {
             true, // Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
             driveTrain // The drive subsystem. Used to properly set the requirements of path following commands
         );
-        driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING);
         
         Command fullAuto = autoBuilder.fullAuto(path);
 

@@ -37,7 +37,8 @@ public class Robot extends TimedRobot {
       SmartDashboard.clearPersistent(key);
     }
 
-    m_robotContainer.arm.zeroSensors();
+    m_robotContainer.arm.zeroArmSensors();
+    m_robotContainer.arm.zeroRotateSensors();
   }
 
   @Override

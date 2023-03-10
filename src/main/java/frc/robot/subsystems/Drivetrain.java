@@ -30,6 +30,8 @@ public class Drivetrain implements Subsystem {
     public static final double MAX_VOLTAGE = 12.0;
   
     public static final double MAX_VELOCITY_METERS_PER_SECOND = 10;
+
+    public static double pitchAngle = 0;
  
     public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = Constants.DRIVE.MAX_ROTATE_SPEED_RAD_PER_SEC_EST;
 
@@ -176,6 +178,7 @@ public class Drivetrain implements Subsystem {
 			currentState = newState;
 			currentStateStartTime = timestamp;
 		}
+        
         updateOdometry();
     }
 
@@ -204,6 +207,15 @@ public class Drivetrain implements Subsystem {
             setWantedState(WantedState.MANUAL_CONTROL);
         crawling = controller.getRightBumper();
 
+        pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
+
+        
+        if (Math.abs(pitchAngle) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && balancedX){
+            balancedX = false;
+        } else if (!balancedX && Math.abs(pitchAngle) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
+            balancedX = true;
+        }
+
     }
 
     
@@ -229,6 +241,8 @@ public class Drivetrain implements Subsystem {
                 break;
 
         }
+
+
         setModuleStates(moduleStates);
         updateStateVariables(moduleStates);
     }
@@ -247,32 +261,23 @@ public class Drivetrain implements Subsystem {
         // Double currentAngle = -1 * Robot.controller.getRawAxis(Constants.LEFT_VERTICAL_JOYSTICK_AXIS) * 45;
 
         // TODO: Cap the angles given so we never calculate above a certain value.
-
-        double pitchAngleDeg = ahrs.getPitch()- Constants.BALANCED_OFFESET;
-
-        double xAxisRate = 0; 
-        double yAxisRate = 0;
+        double xAxisRate = 0;         
         
-        if (Math.abs(pitchAngleDeg) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && balancedX){
-            balancedX = false;
-        } else if (!balancedX && Math.abs(pitchAngleDeg) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
-            balancedX = true;
+
+
+        if (!balancedX && pitchAngle > 0) {
+
+            double pitchAngleRadians = pitchAngle * (Math.PI / 180.0);
+            xAxisRate = Math.min(4, Math.abs(Math.sin(pitchAngleRadians)));
         }
 
+        if (!balancedX && pitchAngle < 0) {
 
-        if (!balancedX && pitchAngleDeg > 0) {
-
-            double pitchAngleRadians = pitchAngleDeg * (Math.PI / 180.0);
-            xAxisRate = Math.abs(Math.sin(pitchAngleRadians));
+            double pitchAngleRadians = pitchAngle * (Math.PI / 180.0);
+            xAxisRate =  Math.min(4, Math.abs(Math.sin(pitchAngleRadians))*-0.5);
         }
 
-        if (!balancedX && pitchAngleDeg < 0) {
-
-            double pitchAngleRadians = pitchAngleDeg * (Math.PI / 180.0);
-            xAxisRate =  Math.abs(Math.sin(pitchAngleRadians))*-1;
-        }
-
-        return drive(xAxisRate*Constants.BALANCEDMAXSPEED, yAxisRate*Constants.BALANCEDMAXSPEED, 0.0, true);
+        return drive(xAxisRate*Constants.BALANCEDMAXSPEED, 0, 0.0, true);
  
         
     }
@@ -333,31 +338,33 @@ public class Drivetrain implements Subsystem {
     @Override
     public void outputTelemetry(double timestamp) {
         
-        /* 
-        SmartDashboard.putString("drivetrain/wantedStateAPI", this.wantedState.toString());
-        SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
-        SmartDashboard.putString("drivetrain/pose",odometry.getPoseMeters().toString());
         SmartDashboard.putString("drivetrain/currentState", currentState.toString());
         SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
-        SmartDashboard.putNumber("drivetrain/VxCmd", periodicIO.VxCmd);
-        SmartDashboard.putNumber("drivetrain/VyCmd", periodicIO.VyCmd);
-        SmartDashboard.putNumber("drivetrain/WzCmd", periodicIO.WzCmd);
-        SmartDashboard.putNumber("driverController/LeftY", controller.getLeftY());
-        SmartDashboard.putNumber("driverController/LeftX", controller.getLeftX());
-        SmartDashboard.putNumber("driverController/RightX", controller.getRightX());
-        SmartDashboard.putString("drivetrain/currentStateOutputs", currentState.toString());
-        SmartDashboard.putString("drivetrain/wantedStateOutputs", wantedState.toString());
-        SmartDashboard.putNumber("drivetrain/goalLimelightAngleError", periodicIO.limelightAngleError);
-        SmartDashboard.putNumber("drivetrain/yawAngle", periodicIO.adjustedYaw);
-        SmartDashboard.putString("drivetrain/pose", getPose().toString());
-        SmartDashboard.putNumber("drivetrain/chassisVx", periodicIO.chassisVx);
-        SmartDashboard.putNumber("drivetrain/chassisVy", periodicIO.chassisVy);
-        SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
-        SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
-        */
+        SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);
+        // SmartDashboard.putString("drivetrain/currentStates", currentState.name());
+        // SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
+        // SmartDashboard.putString("drivetrain/pose",odometry.getPoseMeters().toString());
+        // SmartDashboard.putString("drivetrain/currentState", currentState.toString());
+        // SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
+        // SmartDashboard.putNumber("drivetrain/VxCmd", periodicIO.VxCmd);
+        // SmartDashboard.putNumber("drivetrain/VyCmd", periodicIO.VyCmd);
+        // SmartDashboard.putNumber("drivetrain/WzCmd", periodicIO.WzCmd);
+        // SmartDashboard.putNumber("driverController/LeftY", controller.getLeftY());
+        // SmartDashboard.putNumber("driverController/LeftX", controller.getLeftX());
+        // SmartDashboard.putNumber("driverController/RightX", controller.getRightX());
+        // SmartDashboard.putString("drivetrain/currentStateOutputs", currentState.toString());
+        // SmartDashboard.putString("drivetrain/wantedStateOutputs", wantedState.toString());
+        // SmartDashboard.putNumber("drivetrain/goalLimelightAngleError", periodicIO.limelightAngleError);
+        // SmartDashboard.putNumber("drivetrain/yawAngle", periodicIO.adjustedYaw);
+        // SmartDashboard.putString("drivetrain/pose", getPose().toString());
+        // SmartDashboard.putNumber("drivetrain/chassisVx", periodicIO.chassisVx);
+        // SmartDashboard.putNumber("drivetrain/chassisVy", periodicIO.chassisVy);
+        // SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
+        // SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
+        
         // SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
         // SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
-        // SmartDashboard.putNumber("PITCH", ahrs.getPitch()-Constants.BALANCED_OFFESET);
+        SmartDashboard.putNumber("PITCH", pitchAngle);
         // for(SwerveModule mod : mSwerveMods){
         //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
         //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
