@@ -265,13 +265,13 @@ public class Drivetrain implements Subsystem {
             balancedY = false;
         }
 
-        if (!balancedX && ahrs.getPitch() > 0) {
+        if (!balancedX && pitchAngleDeg > 0) {
 
             double pitchAngleRadians = pitchAngleDeg * (Math.PI / 180.0);
             xAxisRate = Math.abs(Math.sin(pitchAngleRadians));
         }
 
-        if (!balancedX && ahrs.getPitch() < 0) {
+        if (!balancedX && pitchAngleDeg < 0) {
 
             double pitchAngleRadians = pitchAngleDeg * (Math.PI / 180.0);
             xAxisRate =  Math.abs(Math.sin(pitchAngleRadians))*-1;
