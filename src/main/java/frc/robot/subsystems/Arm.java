@@ -251,7 +251,7 @@ public class Arm implements Subsystem {
                 configExtend(0);
                 break;
             case ZERO:
-                configRotate(41320);
+                configRotate(70057);
                 configExtend(0);
                 break;
             default:
@@ -319,7 +319,7 @@ public class Arm implements Subsystem {
     }
 
     public void manualControl(double rotateOutput, double armOutput){
-        rotateMotorRight.set(ControlMode.PercentOutput, rotateOutput);
+        rotateMotorRight.set(ControlMode.PercentOutput, rotateOutput/4);
         if (!armLimitSwitch.get() && armOutput < 0){
             liftMotor.set(ControlMode.PercentOutput, 0);
         } else {
