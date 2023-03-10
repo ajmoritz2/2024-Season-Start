@@ -15,8 +15,10 @@ public final class Constants {
 
     public static final double BEAM_BALANACED_DRIVE_KP = 0.05; // P (Proportional) constant of a PID loop 0.015
     public static final double BEAM_BALANCED_GOAL_DEGREES = 0;
-    public static final double BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES = 1;
-    public static final double BACKWARDS_BALANCING_EXTRA_POWER_MULTIPLIER = 1;
+    public static final double BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES = 7;
+    public static final double BALANCEDMAXSPEED = 3;
+    public static final double BALANCED_OFFESET = 2.3;
+
 
     public static final class Swerve {
        
@@ -156,6 +158,7 @@ public final class Constants {
     public static final String MANIP_CANBUS = "DADbus";
 
     public static final double DEADBAND = 0.1;
+
     
     public final static class DRIVE {
         /**

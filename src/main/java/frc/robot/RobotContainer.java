@@ -39,6 +39,7 @@ public class RobotContainer {
 	public final Drivetrain drivetrain;
 	public final Arm arm;
 	private final Intake intake;
+	private final Limelight limelight;
 
 	private SendableChooser<Command> autonChooser;
 
@@ -64,10 +65,11 @@ public class RobotContainer {
 		intake = new Intake(operatorController);
 		arm = new Arm(operatorController,intake);
 		drivetrain = new Drivetrain(driverController);
+		limelight = new Limelight(driverController);
 		
 		manager = new SubsystemManager(0.02);
 
-		manager.setSubsystems(drivetrain, arm, intake);
+		manager.setSubsystems(drivetrain, arm, intake, limelight);
 
 
 		addressButtons();
