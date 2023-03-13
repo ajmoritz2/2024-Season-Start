@@ -2,19 +2,16 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
-
-import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.sensors.CANCoder;
 
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
 
@@ -33,12 +30,14 @@ public class Arm implements Subsystem {
         NEUTRAL,
         GROUND_ANGLE,
         HUMAN_FOLD,
+        ZERO,
         PLACING,
         HIGH,
         MID,
         TRAVEL,
         AUTON_MID,
-        AUTON_HIGH
+        AUTON_HIGH,
+        MANUAL
     }
 
     private SystemState currentState = SystemState.NEUTRAL;
@@ -56,6 +55,8 @@ public class Arm implements Subsystem {
 
     private final PS4Controller controller;
 
+    private boolean manualMode = false;
+
     public Arm(PS4Controller controller, Intake intake){
 
         this.intake = intake;
@@ -71,7 +72,7 @@ public class Arm implements Subsystem {
         rotateMotorRight.configFactoryDefault();
         
 
-        armLimitSwitch = new DigitalInput(1);
+        armLimitSwitch = new DigitalInput(9);
         rotateLimitSwitch = new DigitalInput(0);
 
         liftMotor.setNeutralMode(NeutralMode.Brake);
@@ -119,6 +120,9 @@ public class Arm implements Subsystem {
          SystemState newState;
          switch(currentState){
              default:
+             case ZERO:
+                newState = handleManual();
+                break;
              case NEUTRAL:
                  newState = handleManual();
                  break;
@@ -138,6 +142,9 @@ public class Arm implements Subsystem {
                 newState = handleManual();
                 break;
             case AUTON_HIGH:
+                newState = handleManual();
+                break;
+            case  MANUAL:
                 newState = handleManual();
                 break;
          }
@@ -161,34 +168,54 @@ public class Arm implements Subsystem {
 
     //    if (controller.getBButtonReleased())
     //     wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.RETRACT;  
+       
         if(!armLimitSwitch.get())
             zeroArmSensors();
 
         if(!rotateLimitSwitch.get())
-            zeroRotateSensors();
+            rotateMotorRight.setSelectedSensorPosition(5174);
+            // zeroRotateSensors();
 
-        
-        if(intake.getIntakeCurrent()>=200 && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
-            setWantedState(SystemState.NEUTRAL);
+        if (!(currentState == SystemState.MANUAL)){
+            if(intake.getIntakeCurrent()>=200 && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
+                setWantedState(SystemState.NEUTRAL);
 
-        if(controller.getCrossButtonPressed())
-            setWantedState(SystemState.GROUND_ANGLE);
-        if(controller.getCrossButtonReleased())
-            setWantedState(SystemState.NEUTRAL);
+            if(controller.getCrossButtonPressed())
+                setWantedState(SystemState.GROUND_ANGLE);
+            if(controller.getCrossButtonReleased())
+                setWantedState(SystemState.NEUTRAL);
 
-        if(controller.getCircleButtonPressed())
-            setWantedState(SystemState.MID);
+            if(controller.getCircleButtonPressed())
+                setWantedState(SystemState.MID);
 
-        if(controller.getTriangleButtonPressed())
-            setWantedState(SystemState.NEUTRAL);
+            if(controller.getTriangleButtonPressed())
+                setWantedState(SystemState.NEUTRAL);
 
-        if(controller.getSquareButtonPressed())
-            setWantedState(SystemState.HIGH);
+            if(controller.getSquareButtonPressed())
+                setWantedState(SystemState.HIGH);
 
-        if(controller.getR1ButtonPressed())
-            setWantedState(SystemState.AUTON_HIGH);
-        if(controller.getR1ButtonReleased())
-            setWantedState(SystemState.NEUTRAL);
+            if(controller.getR1ButtonPressed())
+                setWantedState(SystemState.AUTON_HIGH); // hUMAN fOLD
+            if(controller.getR1ButtonReleased())
+                setWantedState(SystemState.NEUTRAL);
+            if (controller.getOptionsButtonPressed())
+                setWantedState(SystemState.ZERO);
+            
+        } else {
+            if (controller.getOptionsButtonPressed())
+                rotateMotorRight.setSelectedSensorPosition(0);
+        }
+
+        if (controller.getPSButtonPressed()){
+            
+            if (currentState == SystemState.MANUAL){
+                setWantedState(SystemState.NEUTRAL);
+                manualMode = false;
+            }else{
+                setWantedState(SystemState.MANUAL);
+                manualMode= true;
+            }
+        }
     }
 
     @Override
@@ -196,15 +223,15 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-86190); //target -88190
+                configRotate(-85190); //target -88190
                 configExtend(0);
                 break;
              case MID:
-                configRotate(-46080); //target -46080
+                configRotate(-42080); //ta  rget -46080
                 configExtend(39949); //target 39949
                 break;
             case HIGH:
-                configRotate(-43320); //target-45320
+                configRotate(-39320); //target-45320
                 configExtend(116256); //traget 116256
                 break;
             case AUTON_MID:
@@ -212,15 +239,39 @@ public class Arm implements Subsystem {
                 configExtend(39949);
                 break;
             case AUTON_HIGH:
-                configRotate(41320);
-                configExtend(114256);
+                configRotate(41320-4000);
+                configExtend(112256);
+                break;
+            case MANUAL:
+                manualControl(controller.getLeftX(), -controller.getRightY());
+                break;
+            case HUMAN_FOLD:
+                configRotate(-41320);
+                configExtend(0);
+                break;
+            case ZERO:
+                configRotate(70057);
+                configExtend(0);
                 break;
             default:
             case NEUTRAL:
+                // neutralize();
                 configRotate(0);
                 configExtend(0);
                 break;
             
+        }
+    }
+
+    public void neutralize(){
+        if (rotateLimitSwitch.get()){
+            if (rotateMotorRight.getSelectedSensorPosition() < 0){
+                rotateMotorRight.set(ControlMode.PercentOutput, 0.4);
+            } else {
+                rotateMotorRight.set(ControlMode.PercentOutput, -0.4); 
+            }
+        } else {
+            rotateMotorRight.set(ControlMode.PercentOutput, 0);
         }
     }
 
@@ -237,6 +288,7 @@ public class Arm implements Subsystem {
         SmartDashboard.putBoolean("RotateLimitSwitch", rotateLimitSwitch.get());
         SmartDashboard.putNumber("Current Lift Pos", liftMotor.getSelectedSensorPosition());
         SmartDashboard.putNumber("Current Rot Pos", rotateMotorRight.getSelectedSensorPosition());
+        SmartDashboard.putBoolean("Manual Mode", manualMode);
     }
 
     private SystemState handleManual(){
@@ -263,9 +315,9 @@ public class Arm implements Subsystem {
 
     @Override
     public void zeroSensors() {
-        liftMotor.setSelectedSensorPosition(0);
-        //rotateMotorLeft.setSelectedSensorPosition(0);
-        rotateMotorRight.setSelectedSensorPosition(0);
+        // liftMotor.setSelectedSensorPosition(0);
+        // //rotateMotorLeft.setSelectedSensorPosition(0);
+        // rotateMotorRight.setSelectedSensorPosition(0);
        // armEncoder.setPosition(0);
        // rotateEncoder.setPosition(0);
     }
@@ -276,6 +328,16 @@ public class Arm implements Subsystem {
     }
     public void zeroArmSensors(){
         liftMotor.setSelectedSensorPosition(0);
+    }
+
+    public void manualControl(double rotateOutput, double armOutput){
+        rotateMotorRight.set(ControlMode.PercentOutput, rotateOutput/4);
+        if (!armLimitSwitch.get() && armOutput < 0){
+            liftMotor.set(ControlMode.PercentOutput, 0);
+        } else {
+            liftMotor.set(ControlMode.PercentOutput, armOutput);
+        }
+        
     }
 
     
