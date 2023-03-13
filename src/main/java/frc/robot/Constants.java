@@ -15,7 +15,7 @@ public final class Constants {
 
     public static final double BEAM_BALANACED_DRIVE_KP = 0.05; // P (Proportional) constant of a PID loop 0.015
     public static final double BEAM_BALANCED_GOAL_DEGREES = 0;
-    public static final double BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES = 7;
+    public static final double BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES = 6.8;
     public static final double BALANCEDMAXSPEED = 3;
     public static final double BALANCED_OFFESET = 2.3;
 
@@ -131,7 +131,7 @@ public final class Constants {
             public static final int driveMotorID = 7;
             public static final int angleMotorID = 8;
             public static final int canCoderID = 18;
-            public static final Rotation2d angleOffset = Rotation2d.fromDegrees(53.8767+180);
+            public static final Rotation2d angleOffset = Rotation2d.fromDegrees(53.8767+16.3146);
             public static final SwerveModuleConstants constants = 
                 new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset);
         }
@@ -194,6 +194,7 @@ public final class Constants {
     }
 
     public class ARM {
+        public static final int MOTOROFFSET = 4000;
         public static final int EXTENDMOTOR = 13;
         public static final int ROTATEMOTOR1 = 11;
         public static final int ROTATEMOTOR2 = 12;

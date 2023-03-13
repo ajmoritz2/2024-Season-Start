@@ -101,6 +101,7 @@ public class RobotContainer {
 		autonChooser.addOption("center", Autons.center(drivetrain,arm,intake));
 		autonChooser.addOption("clear", Autons.clear(drivetrain, arm, intake));
 		autonChooser.addOption("wireCover", Autons.wireCover(drivetrain, arm, intake));
+		autonChooser.addOption("EMERGENCY USE ONLY!!: NOTHING", Autons.emergencyDonNothing(drivetrain));
 		SmartDashboard.putData("auton/chooser",autonChooser);
 
 	}

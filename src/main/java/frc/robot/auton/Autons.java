@@ -26,7 +26,7 @@ import frc.robot.subsystems.Drivetrain.WantedState;
 import frc.robot.auton.commands.*;
 
 public class Autons {
-    private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("center", new PathConstraints(5, 4));
+    private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("center", new PathConstraints(2.5, 2));
     private static List<PathPlannerTrajectory> clear = PathPlanner.loadPathGroup("Clear", new PathConstraints(2.5, 3));
     private static List<PathPlannerTrajectory> wireCover = PathPlanner.loadPathGroup("WireCover", new PathConstraints(2.5, 3));
     
@@ -66,6 +66,10 @@ public class Autons {
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE))
             );
+    }
+
+    public static Command emergencyDonNothing(Drivetrain drivetrain){
+        return new InstantCommand(() -> drivetrain.drive(0,0,0,true));
     }
 
     public static Command clear(Drivetrain driveTrain, Arm arm, Intake intake){

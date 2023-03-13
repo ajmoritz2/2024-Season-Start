@@ -174,7 +174,7 @@ public class Arm implements Subsystem {
             zeroArmSensors();
 
         if(!rotateLimitSwitch.get())
-            rotateMotorRight.setSelectedSensorPosition(7174);
+            rotateMotorRight.setSelectedSensorPosition(5174);
             // zeroRotateSensors();
 
         if (!(currentState == SystemState.MANUAL)){
@@ -196,15 +196,15 @@ public class Arm implements Subsystem {
                 setWantedState(SystemState.HIGH);
 
             if(controller.getR1ButtonPressed())
-                setWantedState(SystemState.HUMAN_FOLD);
+                setWantedState(SystemState.AUTON_HIGH); // hUMAN fOLD
             if(controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
             if (controller.getOptionsButtonPressed())
                 setWantedState(SystemState.ZERO);
-                   
-                    
             
-            
+        } else {
+            if (controller.getOptionsButtonPressed())
+                rotateMotorRight.setSelectedSensorPosition(0);
         }
 
         if (controller.getPSButtonPressed()){
@@ -224,15 +224,15 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-86190); //target -88190
+                configRotate(-85190); //target -88190
                 configExtend(0);
                 break;
              case MID:
-                configRotate(-46080); //target -46080
+                configRotate(-42080); //ta  rget -46080
                 configExtend(39949); //target 39949
                 break;
             case HIGH:
-                configRotate(-43320); //target-45320
+                configRotate(-39320); //target-45320
                 configExtend(116256); //traget 116256
                 break;
             case AUTON_MID:
@@ -240,8 +240,8 @@ public class Arm implements Subsystem {
                 configExtend(39949);
                 break;
             case AUTON_HIGH:
-                configRotate(41320);
-                configExtend(114256);
+                configRotate(41320-4000);
+                configExtend(112256);
                 break;
             case MANUAL:
                 manualControl(controller.getLeftX(), -controller.getRightY());
@@ -256,10 +256,23 @@ public class Arm implements Subsystem {
                 break;
             default:
             case NEUTRAL:
+                // neutralize();
                 configRotate(0);
                 configExtend(0);
                 break;
             
+        }
+    }
+
+    public void neutralize(){
+        if (rotateLimitSwitch.get()){
+            if (rotateMotorRight.getSelectedSensorPosition() < 0){
+                rotateMotorRight.set(ControlMode.PercentOutput, 0.4);
+            } else {
+                rotateMotorRight.set(ControlMode.PercentOutput, -0.4); 
+            }
+        } else {
+            rotateMotorRight.set(ControlMode.PercentOutput, 0);
         }
     }
 

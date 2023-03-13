@@ -274,7 +274,7 @@ public class Drivetrain implements Subsystem {
         if (!balancedX && pitchAngle < 0) {
 
             double pitchAngleRadians = pitchAngle * (Math.PI / 180.0);
-            xAxisRate =  Math.min(4, Math.abs(Math.sin(pitchAngleRadians))*-0.5);
+            xAxisRate =  Math.min(4, Math.abs(Math.sin(pitchAngleRadians))*-0.2);
         }
 
         return drive(xAxisRate*Constants.BALANCEDMAXSPEED, 0, 0.0, true);
@@ -365,11 +365,11 @@ public class Drivetrain implements Subsystem {
         // SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
         // SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
         SmartDashboard.putNumber("PITCH", pitchAngle);
-        // for(SwerveModule mod : mSwerveMods){
-        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
-        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
-        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);    
-        // }
+        for(SwerveModule mod : mSwerveMods){
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);    
+        }
         
     }
 
