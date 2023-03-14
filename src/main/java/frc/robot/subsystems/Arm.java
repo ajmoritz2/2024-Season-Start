@@ -1,30 +1,28 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.can.TalonFX;
-import com.ctre.phoenix.sensors.CANCoder;
 
-import edu.wpi.first.math.controller.ElevatorFeedforward;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import com.ctre.phoenixpro.StatusCode;
+import com.ctre.phoenixpro.configs.TalonFXConfiguration;
+import com.ctre.phoenixpro.controls.MotionMagicVoltage;
+import com.ctre.phoenixpro.hardware.TalonFX;
+
+import com.ctre.phoenixpro.signals.AbsoluteSensorRangeValue;
+// import com.ctre.phoenixpro.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenixpro.signals.SensorDirectionValue;
+
+import com.ctre.phoenixpro.configs.CANcoderConfiguration;
+// import com.ctre.phoenixpro.configs.CurrentLimitsConfigs;
+import com.ctre.phoenixpro.hardware.CANcoder;
+
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
+//import edu.wpi.first.wpilibj2.command.InstantCommand;
+//import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+//import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
 
 public class Arm implements Subsystem {
-
-    private TalonFX liftMotor;
-   // private TalonFX rotateMotorLeft;
-    private TalonFX rotateMotorRight;
-    private DigitalInput armLimitSwitch;
-    private DigitalInput rotateLimitSwitch;
-    private CANCoder armEncoder;
-    private CANCoder rotateEncoder;
-    private ElevatorFeedforward feedforward;
 
     public enum SystemState{
         NEUTRAL,
@@ -40,85 +38,176 @@ public class Arm implements Subsystem {
         MANUAL
     }
 
-    private SystemState currentState = SystemState.NEUTRAL;
-    private SystemState wantedState = SystemState.NEUTRAL;
+    private SystemState m_currentState = SystemState.NEUTRAL;
+    private SystemState m_wantedState = SystemState.NEUTRAL;
 
-    private final TrapezoidProfile.Constraints m_constraints =
+    protected TalonFX m_extendMotor;
+    protected MotionMagicVoltage m_extendMotorMMV;
+    // protected CANcoder m_extendEncoder;
+    protected DigitalInput m_extendLimitSwitch;
 
-    new TrapezoidProfile.Constraints(10, 2);
+    protected TalonFX m_rotateMotor;
+    protected MotionMagicVoltage m_rotateMotorMMV;
+    protected CANcoder m_rotateEncoder;
+    protected DigitalInput m_rotateLimitSwitch;
 
-    private TrapezoidProfile.State m_goal = new TrapezoidProfile.State();
 
-    private TrapezoidProfile.State m_setpoint = new TrapezoidProfile.State();
+    private final Intake m_intake;
+    private final PS4Controller m_controller;
 
-    private final Intake intake;
-
-    private final PS4Controller controller;
-
-    private boolean manualMode = false;
+    private boolean m_manualMode = false;
 
     public Arm(PS4Controller controller, Intake intake){
 
-        this.intake = intake;
-        this.controller = controller;
+        m_intake = intake;
+        m_controller = controller;
 
-        liftMotor = new TalonFX(Constants.ARM.EXTENDMOTOR, "MANIPbus");
-        rotateMotorRight = new TalonFX(Constants.ARM.ROTATEMOTOR2, "MANIPbus");
-        //rotateMotorLeft = new TalonFX(Constants.Arm.ROTATEMOTOR1, "MANIPbus");
-        armEncoder = new CANCoder(Constants.ARM.EXTENDENCODER, "MANIPbus");
-        rotateEncoder = new CANCoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
-        liftMotor.configFactoryDefault();
-        //rotateMotorLeft.configFactoryDefault();
-        rotateMotorRight.configFactoryDefault();
-        
+        // extendEncoderInit();
+		extendMotorInit();
+        m_extendLimitSwitch = new DigitalInput(9);
 
-        armLimitSwitch = new DigitalInput(9);
-        rotateLimitSwitch = new DigitalInput(0);
-
-        liftMotor.setNeutralMode(NeutralMode.Brake);
-        //rotateMotorLeft.setNeutralMode(NeutralMode.Brake);
-        rotateMotorRight.setNeutralMode(NeutralMode.Brake);
-
-        liftMotor.selectProfileSlot(0, 0);
-		liftMotor.config_kF(0, 0.125);
-		liftMotor.config_kP(0,2); //0.1
-		liftMotor.config_kI(0, 0);
-		liftMotor.config_kD(0, 0);
-
-        liftMotor.configPeakOutputForward(0.5);
-        liftMotor.configPeakOutputReverse(-0.5);
-        /* 
-        rotateMotorLeft.selectProfileSlot(0, 0);
-		rotateMotorLeft.config_kF(0, 0.125);
-		rotateMotorLeft.config_kP(0,2.4); //2.4 5% overshoot
-		rotateMotorLeft.config_kI(0, 0);
-		rotateMotorLeft.config_kD(0, 0);
-        rotateMotorLeft.configPeakOutputForward(0.4);
-        rotateMotorLeft.configPeakOutputReverse(-0.4);
-        */
-        rotateMotorRight.selectProfileSlot(0, 0);
-		rotateMotorRight.config_kF(0, 0.125);
-		rotateMotorRight.config_kP(0,2.4); //2.4 5% overshoot
-		rotateMotorRight.config_kI(0, 0);
-		rotateMotorRight.config_kD(0, 0);
-
-        rotateMotorRight.configPeakOutputForward(0.3);
-        rotateMotorRight.configPeakOutputReverse(-0.3);
-
-        feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
-        liftMotor.setSensorPhase(true);
-       // rotateMotorLeft.setSensorPhase(true);
-        rotateMotorRight.setSensorPhase(true);
-
-        //rotateMotorLeft.follow(rotateMotorRight);
-        // liftMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
+        //---------------------------------------------------------------------
+        rotateEncoderInit();
+        rotateMotorInit();
+		m_rotateLimitSwitch = new DigitalInput(0);
+        //--------------------------------------------------------------------- 
+        // feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
+        // liftMotor.setSensorPhase(true);
+        // rotateMotorLeft.setSensorPhase(true);
+        // rotateMotorRight.setSensorPhase(true);
     }
 
+    private void extendMotorInit(){
+        m_extendMotor = new TalonFX(Constants.ARM.EXTENDMOTOR, "MANIPbus");
+        m_extendMotorMMV = new MotionMagicVoltage(0);
+
+        TalonFXConfiguration cfg = new TalonFXConfiguration();
+        /* Configure current limits */
+        cfg.MotionMagic.MotionMagicCruiseVelocity = 20; // 5 rotations per second cruise
+        cfg.MotionMagic.MotionMagicAcceleration = 40; // Take approximately 0.5 seconds to reach max vel
+        cfg.MotionMagic.MotionMagicJerk = 50;   
+
+		// from Phoenix v5 - kettering
+		// liftMotor.config_kF(0, 0.125);
+		// liftMotor.config_kP(0,2); //0.1
+		// liftMotor.config_kI(0, 0);
+		// liftMotor.config_kD(0, 0);
+        // liftMotor.configPeakOutputForward(0.5);
+		// liftMotor.configPeakOutputReverse(-0.5);
+		// liftMotor.setSensorPhase(true);
+		
+        cfg.Slot0.kP = 4.0F;
+        cfg.Slot0.kI = 0.0F;
+        cfg.Slot0.kD = 0.0F;
+        cfg.Slot0.kV = 0.0F;
+        cfg.Slot0.kS = 0.0F; // Approximately 0.25V to get the mechanism moving
+
+        // cfg.Feedback.SensorToMechanismRatio = 2F;
+    
+		//TODO make this like 0.5 percentoutput, so maxvoltage/2
+        // cfg.Voltage.PeakForwardVoltage = 3.2; //3.2V is 20% of 16V
+        // cfg.Voltage.PeakForwardVoltage = -3.2; //3.2V is 20% of 16V
+
+        // cfg.CurrentLimits.SupplyCurrentLimitEnable = true;
+        // cfg.CurrentLimits.SupplyCurrentLimit = 15.0;
+        // m_extendMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
+
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for(int i = 0; i < 5; ++i) {
+          status = m_extendMotor.getConfigurator().apply(cfg);
+          if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+          System.out.println("Could not configure extend motor. Error: " + status.toString());
+        }
+
+        m_extendMotorMMV.OverrideBrakeDurNeutral = true;
+        m_extendMotor.setRotorPosition(0);
+        m_extendMotor.setVoltage(0);
+    }
+
+	private void rotateMotorInit(){
+        m_rotateMotor = new TalonFX(Constants.ARM.ROTATEMOTOR, "MANIPbus");
+        m_rotateMotorMMV = new MotionMagicVoltage(0);  
+
+        TalonFXConfiguration cfg = new TalonFXConfiguration();
+        /* Configure current limits */
+        cfg.MotionMagic.MotionMagicCruiseVelocity = 5; // 5 rotations per second cruise
+        cfg.MotionMagic.MotionMagicAcceleration = 10; // Take approximately 0.5 seconds to reach max vel
+        cfg.MotionMagic.MotionMagicJerk = 50;   
+
+		// from Phoenix v5 - kettering
+        // rotateMotorRight.selectProfileSlot(0, 0);
+		// rotateMotorRight.config_kF(0, 0.125);
+		// rotateMotorRight.config_kP(0,2.4); //2.4 5% overshoot
+		// rotateMotorRight.config_kI(0, 0);
+		// rotateMotorRight.config_kD(0, 0);
+		// rotateMotorRight.configPeakOutputForward(0.3);
+        // rotateMotorRight.configPeakOutputReverse(-0.3);
+		// rotateMotorRight.setSensorPhase(true);
+		
+        cfg.Slot0.kP = 2.0F;
+        cfg.Slot0.kI = 0.0F;
+        cfg.Slot0.kD = 0.0F;
+        cfg.Slot0.kV = 0.0F;
+        cfg.Slot0.kS = 0.25F; // Approximately 0.25V to get the mechanism moving
+    
+        // cfg.Feedback.SensorToMechanismRatio = 2F;
+        
+        // cfg.Voltage.PeakForwardVoltage = 3.2; //3.2V is 20% of 16V
+        // cfg.Voltage.PeakForwardVoltage = -3.2; //3.2V is 20% of 16V
+
+        // cfg.CurrentLimits.SupplyCurrentLimitEnable = true;
+        // cfg.CurrentLimits.SupplyCurrentLimit = 15.0;
+
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for(int i = 0; i < 5; ++i) {
+          status = m_rotateMotor.getConfigurator().apply(cfg);
+          if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+          System.out.println("Could not configure rotate right motor. Error: " + status.toString());
+        }
+
+        m_rotateMotorMMV.OverrideBrakeDurNeutral = true;
+        m_rotateMotor.setRotorPosition(0);
+        m_rotateMotor.setVoltage(0);
+    }
+
+    // private void extendEncoderInit(){
+    //     m_extendEncoder = new CANcoder(Constants.ARM.EXTENDENCODER, "MANIPbus");
+
+    //     /* Configure CANcoder */
+    //     var cfg = new CANcoderConfiguration();
+
+    //     /* User can change the configs if they want, or leave it empty for factory-default */
+
+    //     m_extendEncoder.getConfigurator().apply(cfg);
+
+    //     /* Speed up signals to an appropriate rate */
+    //     m_extendEncoder.getPosition().setUpdateFrequency(100);
+    //     m_extendEncoder.getVelocity().setUpdateFrequency(100);
+    // }
+
+    private void rotateEncoderInit(){
+        m_rotateEncoder = new CANcoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
+
+        /* Configure CANcoder to zero the magnet appropriately */
+        CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
+        cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
+        cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+        cc_cfg.MagnetSensor.MagnetOffset = 0.4;   //TODO
+        m_rotateEncoder.getConfigurator().apply(cc_cfg);
+
+        /* Speed up signals to an appropriate rate */
+        m_rotateEncoder.getPosition().setUpdateFrequency(100);
+        m_rotateEncoder.getVelocity().setUpdateFrequency(100);
+    }
     @Override
     public void processLoop(double timestamp) {
         
          SystemState newState;
-         switch(currentState){
+         switch(m_currentState){
              default:
              case ZERO:
                 newState = handleManual();
@@ -149,8 +238,8 @@ public class Arm implements Subsystem {
                 break;
          }
 
-        if (wantedState != currentState) {
-			currentState = newState;
+        if (m_wantedState != m_currentState) {
+			m_currentState = newState;
         }
     }
 
@@ -168,52 +257,56 @@ public class Arm implements Subsystem {
 
     //    if (controller.getBButtonReleased())
     //     wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.RETRACT;  
-       
-        if(!armLimitSwitch.get())
-            zeroArmSensors();
 
-        if(!rotateLimitSwitch.get())
-            rotateMotorRight.setSelectedSensorPosition(5174);
-            // zeroRotateSensors();
+//TODO  - not sure need these anymore with encode on shaft
+//        or at least zeroed differently now     
+//        if(!extendLimitSwitch.get())
+//            zeroArmSensors();
+//
+//        if(!rotateLimitSwitch.get())
+//            rotateMotor.setSelectedSensorPosition(5174);
+//            // zeroRotateSensors();
 
-        if (!(currentState == SystemState.MANUAL)){
-            if(intake.getIntakeCurrent()>=200 && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
+        if (!(m_currentState == SystemState.MANUAL)){
+            if(m_intake.getIntakeCurrent()>=200 && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
                 setWantedState(SystemState.NEUTRAL);
 
-            if(controller.getCrossButtonPressed())
+            if(m_controller.getCrossButtonPressed())
                 setWantedState(SystemState.GROUND_ANGLE);
-            if(controller.getCrossButtonReleased())
+            if(m_controller.getCrossButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
 
-            if(controller.getCircleButtonPressed())
+            if(m_controller.getCircleButtonPressed())
                 setWantedState(SystemState.MID);
 
-            if(controller.getTriangleButtonPressed())
+            if(m_controller.getTriangleButtonPressed())
                 setWantedState(SystemState.NEUTRAL);
 
-            if(controller.getSquareButtonPressed())
+            if(m_controller.getSquareButtonPressed())
                 setWantedState(SystemState.HIGH);
 
-            if(controller.getR1ButtonPressed())
+            if(m_controller.getR1ButtonPressed())
                 setWantedState(SystemState.AUTON_HIGH); // hUMAN fOLD
-            if(controller.getR1ButtonReleased())
+            if(m_controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
-            if (controller.getOptionsButtonPressed())
+            if (m_controller.getOptionsButtonPressed())
                 setWantedState(SystemState.ZERO);
             
         } else {
-            if (controller.getOptionsButtonPressed())
-                rotateMotorRight.setSelectedSensorPosition(0);
+            if (m_controller.getOptionsButtonPressed()){
+                // TODO - what is this doing?
+                // m_rotateMotor.setSelectedSensorPosition(0);
+            }
         }
 
-        if (controller.getPSButtonPressed()){
+        if (m_controller.getPSButtonPressed()){
             
-            if (currentState == SystemState.MANUAL){
+            if (m_currentState == SystemState.MANUAL){
                 setWantedState(SystemState.NEUTRAL);
-                manualMode = false;
+                m_manualMode = false;
             }else{
                 setWantedState(SystemState.MANUAL);
-                manualMode= true;
+                m_manualMode= true;
             }
         }
     }
@@ -221,59 +314,71 @@ public class Arm implements Subsystem {
     @Override
     public void writePeriodicOutputs(double timestamp)
     {
-        switch (currentState){
+        switch (m_currentState){
             case GROUND_ANGLE:
-                configRotate(-85190); //target -88190
-                configExtend(0);
+
+				//4096 ticks in a revolution
+				// configRotate(-20.8);   //-85190/4096
+                configRotateAngle(-90);
+				configExtend(0);	
                 break;
-             case MID:
-                configRotate(-42080); //ta  rget -46080
-                configExtend(39949); //target 39949
+             case MID:			
+				// configRotate(-10.2);  //-42080/4096
+                configRotateAngle(-45);
+                configExtend(9.7);    //39949/4096
                 break;
             case HIGH:
-                configRotate(-39320); //target-45320
-                configExtend(116256); //traget 116256
+				// configRotate(-9.6);   //-39320/4096
+                configRotateAngle(-45);
+				configExtend(28.3);     //116256/4096
                 break;
             case AUTON_MID:
-                configRotate(46080);
-                configExtend(39949);
+				// TODO - check this rotate.  shouldn't just be opposite MID ?
+                // configRotate(11.2);   //46080/4096
+                configRotateAngle(45);
+                configExtend(9.7);    //39949/4096
                 break;
             case AUTON_HIGH:
-                configRotate(41320-4000);
-                configExtend(112256);
+				//TODO - check this rotate.  shouldn't just be opposite HIGH ?
+				// configRotate(9.1);    //(41320-4000)/4096
+                configRotateAngle(45);
+				configExtend(27.4);     //112256/4096
                 break;
-            case MANUAL:
-                manualControl(controller.getLeftX(), -controller.getRightY());
-                break;
+            // case MANUAL:
+            //     manualControl(m_controller.getLeftX(), -m_controller.getRightY());
+            //     break;
             case HUMAN_FOLD:
-                configRotate(-41320);
+				// configRotate(-10.1);   //-41320/4096
+                configRotateAngle(-40);
                 configExtend(0);
                 break;
             case ZERO:
-                configRotate(70057);
+				// configRotate(17.1);   //70057/4096
+                configRotateAngle(22);
                 configExtend(0);
                 break;
             default:
             case NEUTRAL:
                 // neutralize();
-                configRotate(0);
+                // configRotate(0);
+                configRotateAngle(0);
                 configExtend(0);
                 break;
             
         }
     }
 
-    public void neutralize(){
-        if (rotateLimitSwitch.get()){
-            if (rotateMotorRight.getSelectedSensorPosition() < 0){
-                rotateMotorRight.set(ControlMode.PercentOutput, 0.4);
-            } else {
-                rotateMotorRight.set(ControlMode.PercentOutput, -0.4); 
-            }
-        } else {
-            rotateMotorRight.set(ControlMode.PercentOutput, 0);
-        }
-    }
+    // public void neutralize(){
+    //     if (m_rotateLimitSwitch.get()){
+    //         if (m_rotateMotor.getSelectedSensorPosition() < 0){
+    //             m_rotateMotor.set(ControlMode.PercentOutput, 0.4);
+    //         } else {
+    //             m_rotateMotor.set(ControlMode.PercentOutput, -0.4); 
+    //         }
+    //     } else {
+    //         m_rotateMotor.set(ControlMode.PercentOutput, 0);
+    //     }
+    // }
 
     @Override
     public void stop() {
@@ -282,30 +387,36 @@ public class Arm implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp){
-        double calced = feedforward.calculate(m_setpoint.position);
-
-        SmartDashboard.putBoolean("ArmLimitSwitch", armLimitSwitch.get());
-        SmartDashboard.putBoolean("RotateLimitSwitch", rotateLimitSwitch.get());
-        SmartDashboard.putNumber("Current Lift Pos", liftMotor.getSelectedSensorPosition());
-        SmartDashboard.putNumber("Current Rot Pos", rotateMotorRight.getSelectedSensorPosition());
-        SmartDashboard.putBoolean("Manual Mode", manualMode);
+        SmartDashboard.putBoolean("ExtendLimitSwitch", m_extendLimitSwitch.get());
+        SmartDashboard.putBoolean("RotateLimitSwitch", m_rotateLimitSwitch.get());
+        SmartDashboard.putString("Extend Motor Pos", m_extendMotor.getPosition().toString());
+        SmartDashboard.putString("Rotate Motor Pos", m_rotateMotor.getPosition().toString());
+		SmartDashboard.putString("Extend Motor Temp", m_extendMotor.getDeviceTemp().toString());
+		SmartDashboard.putString("Rotate Motor Temp", m_rotateMotor.getDeviceTemp().toString());
+        SmartDashboard.putBoolean("Manual Mode", m_manualMode);
     }
 
     private SystemState handleManual(){
-        return wantedState;
+        return m_wantedState;
     }
 
     public void setWantedState(SystemState wanted){
-        wantedState = wanted;
+        m_wantedState = wanted;
     }
 
     public void configExtend(double position){
-        liftMotor.set(ControlMode.Position, position);
+        m_extendMotor.setControl(m_extendMotorMMV.withPosition(position));
     }
    
-    public void configRotate(double pos){
-        //rotateMotorLeft.set(ControlMode.Position, pos);
-        rotateMotorRight.set(ControlMode.Position, pos);
+    public void configRotate(double position){
+        m_rotateMotor.setControl(m_rotateMotorMMV.withPosition(position));
+    }
+
+    public void configRotateAngle(double angle){
+        //4096 ticks
+        //0 position is ARM straight-up
+        double position = Constants.ARM.ROTATEENCODERZEROOFFSET + angle * 4096;
+        configRotate(position);
     }
     
     @Override
@@ -315,40 +426,34 @@ public class Arm implements Subsystem {
 
     @Override
     public void zeroSensors() {
-        // liftMotor.setSelectedSensorPosition(0);
-        // //rotateMotorLeft.setSelectedSensorPosition(0);
-        // rotateMotorRight.setSelectedSensorPosition(0);
-       // armEncoder.setPosition(0);
-       // rotateEncoder.setPosition(0);
+	    zeroExtendSensor();
+        zeroRotateSensor();
     }
    
-    public void zeroRotateSensors(){
-        //rotateMotorLeft.setSelectedSensorPosition(0);
-        rotateMotorRight.setSelectedSensorPosition(0);
+    public void zeroExtendSensor(){
+        m_extendMotor.setControl(m_extendMotorMMV.withPosition(0));
     }
-    public void zeroArmSensors(){
-        liftMotor.setSelectedSensorPosition(0);
+    public void zeroRotateSensor(){
+        //move arm to vertical '0' position
+        m_rotateMotor.setControl(m_rotateMotorMMV.withPosition(Constants.ARM.ROTATEENCODERZEROOFFSET));
     }
 
-    public void manualControl(double rotateOutput, double armOutput){
-        rotateMotorRight.set(ControlMode.PercentOutput, rotateOutput/4);
-        if (!armLimitSwitch.get() && armOutput < 0){
-            liftMotor.set(ControlMode.PercentOutput, 0);
-        } else {
-            liftMotor.set(ControlMode.PercentOutput, armOutput);
-        }
+
+    // public void manualControl(double rotateOutput, double armOutput){
+    //     m_rotateMotor.set(ControlMode.PercentOutput, rotateOutput/4);
+    //     if (!m_extendLimitSwitch.get() && armOutput < 0){
+    //         m_extendMotor.set(ControlMode.PercentOutput, 0);
+    //     } else {
+    //         m_extendMotor.set(ControlMode.PercentOutput, armOutput);
+    //     }
         
-    }
+    // }
 
-    
 
     @Override
     public String getId() {
-        return null;
+        return "Arm";
     }
 
-    private float ensureRange(float value, float min, float max) {
-        return Math.min(Math.max(value, min), max);
-     }
     
 }
