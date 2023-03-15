@@ -27,9 +27,9 @@ import frc.robot.utils.maths.oneDimensionalLookup;
 
 public class Drivetrain implements Subsystem {
   
-    public static final double MAX_VOLTAGE = 12.0;
+    public static final double MAX_VOLTAGE = 11.0;
   
-    public static final double MAX_VELOCITY_METERS_PER_SECOND = 10;
+    public static final double MAX_VELOCITY_METERS_PER_SECOND = 4.94;
 
     public static double pitchAngle = 0;
  
@@ -52,9 +52,9 @@ public class Drivetrain implements Subsystem {
         new Translation2d(-Constants.DRIVE.TRACKWIDTH_METERS / 2.0, -Constants.DRIVE.WHEELBASE_METERS / 2.0)
     );
 
-    private final SlewRateLimiter slewX = new SlewRateLimiter(1/3);
-    private final SlewRateLimiter slewY = new SlewRateLimiter(1/3);
-    private final SlewRateLimiter slewRot = new SlewRateLimiter(1/3);
+    private final SlewRateLimiter slewX = new SlewRateLimiter(9);
+    private final SlewRateLimiter slewY = new SlewRateLimiter(9);
+    private final SlewRateLimiter slewRot = new SlewRateLimiter(.5);
 
  
     private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
@@ -194,9 +194,9 @@ public class Drivetrain implements Subsystem {
         periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-        periodicIO.modifiedJoystickX = slewX.calculate(-controller.getLeftX()*Math.abs(controller.getLeftX()) * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
-        periodicIO.modifiedJoystickY = slewY.calculate(-controller.getLeftY()*Math.abs(controller.getLeftY()) * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
-        periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX()*Math.abs(controller.getRightX()) * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND));
+        periodicIO.modifiedJoystickX = slewX.calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+        periodicIO.modifiedJoystickY = slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+        periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND));
         
 
         double[] chassisVelocity = chassisSpeedsGetter();
@@ -345,6 +345,9 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putString("drivetrain/currentState", currentState.toString());
         SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
         SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);
+        SmartDashboard.putNumber("ModifiedX", periodicIO.modifiedJoystickX);
+        SmartDashboard.putNumber("ModifiedY", periodicIO.modifiedJoystickY);
+        SmartDashboard.putNumber("ModifiedR", periodicIO.modifiedJoystickR);
         // SmartDashboard.putString("drivetrain/currentStates", currentState.name());
         // SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
         // SmartDashboard.putString("drivetrain/pose",odometry.getPoseMeters().toString());
