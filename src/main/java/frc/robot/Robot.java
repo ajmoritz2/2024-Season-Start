@@ -33,7 +33,7 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
     m_robotContainer.startSubsystemThreads();
 
-    for (String key : SmartDashboard.getKeys()){
+    for (String key : SmartDashboard.getKeys()){ // Get rid of unused/ commented out keys hopefully.
       SmartDashboard.clearPersistent(key);
     }
 

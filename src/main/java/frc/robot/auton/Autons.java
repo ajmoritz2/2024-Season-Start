@@ -27,29 +27,10 @@ import frc.robot.auton.commands.*;
 
 public class Autons {
     private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("center", new PathConstraints(2.5, 2));
-    private static List<PathPlannerTrajectory> clear = PathPlanner.loadPathGroup("Clear", new PathConstraints(2.5, 3));
+    private static PathPlannerTrajectory clear = PathPlanner.loadPath("Clear", new PathConstraints(2.5, 1.5));
     private static List<PathPlannerTrajectory> wireCover = PathPlanner.loadPathGroup("WireCover", new PathConstraints(2.5, 3));
     
     public static Command center(Drivetrain driveTrain, Arm arm, Intake intake){
-        // This is just an example event map. It would be better to have a constant, global event map
-        // in your code that will be used by all path following commands.
-        // HashMap<String, Command> eventMap = new HashMap<>();
-        // eventMap.put("marker1", new PrintCommand("Passed marker 1"));
-
-        // // Create the AutoBuilder. This only needs to be created once when robot code starts, not every time you want to create an auto command. A good place to put this is in RobotContainer along with your subsystems.
-        // SwerveAutoBuilder autoBuilder = new SwerveAutoBuilder(
-        //     driveTrain::getPose, // Pose2d supplier// Pose2d consumer, used to reset odometry at the beginning of auto
-        //     driveTrain::resetPose,
-        //     driveTrain.getKinematics(), // SwerveDriveKinematics
-        //     new PIDConstants(.5, 0.0, 0.0), // PID constants to correct for translation error (used to create the X and Y PID controllers)
-        //     new PIDConstants(0.6, 0.0, 0.0), // PID constants to correct for rotation error (used to create the rotation controller)
-        //     driveTrain::setModuleStatesFromTrajectory, // Module states consumer used to output to the drive subsystem
-        //     eventMap,
-        //     true, // Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
-        //     driveTrain // The drive subsystem. Used to properly set the requirements of path following commands
-        // );
-        // driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING);
-
         Command fullAuto = generateFullAuto(center, driveTrain);
 
     
@@ -73,62 +54,24 @@ public class Autons {
     }
 
     public static Command clear(Drivetrain driveTrain, Arm arm, Intake intake){
-        // This is just an example event map. It would be better to have a constant, global event map
-        // in your code that will be used by all path following commands.
-        // HashMap<String, Command> eventMap = new HashMap<>();
-        // eventMap.put("marker1", new PrintCommand("Passed marker 1"));
-        
-        // // Create the AutoBuilder. This only needs to be created once when robot code starts, not every time you want to create an auto command. A good place to put this is in RobotContainer along with your subsystems.
-        // SwerveAutoBuilder autoBuilder = new SwerveAutoBuilder(
-        //     driveTrain::getPose, // Pose2d supplier// Pose2d consumer, used to reset odometry at the beginning of auto
-        //     driveTrain::resetPose,
-        //     driveTrain.getKinematics(), // SwerveDriveKinematics
-        //     new PIDConstants(.5, 0.0, 0.0), // PID constants to correct for translation error (used to create the X and Y PID controllers)
-        //     new PIDConstants(0.6, 0.0, 0.0), // PID constants to correct for rotation error (used to create the rotation controller)
-        //     driveTrain::setModuleStatesFromTrajectory, // Module states consumer used to output to the drive subsystem
-        //     eventMap,
-        //     true, // Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
-        //     driveTrain // The drive subsystem. Used to properly set the requirements of path following commands
-        // );
-        // driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING);
-        
-        Command fullAuto = generateFullAuto(clear, driveTrain);
+        PathPlannerCommand fullAuto = new PathPlannerCommand(clear, driveTrain);
         
             
         return new SequentialCommandGroup(
-                new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
-                new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
-                new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
-                new WaitCommand(1),
-                new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
-                new WaitCommand(1),
+                // new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
+                // new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
+                // new WaitCommand(1.2),
+                // new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
+                // new WaitCommand(1),
+                // new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
+                // new WaitCommand(1),
                 new InstantCommand(()-> driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING)),
-                fullAuto.alongWith(new WaitCommand(5)),
-                new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE))
+                fullAuto.alongWith(new WaitCommand(5))
+                // new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE))
             );
     }
 
     public static Command wireCover(Drivetrain driveTrain, Arm arm, Intake intake){
-        // This is just an example event map. It would be better to have a constant, global event map
-        // in your code that will be used by all path following commands.
-        // HashMap<String, Command> eventMap = new HashMap<>();
-        // eventMap.put("marker1", new PrintCommand("Passed marker 1"));
-        
-        // // Create the AutoBuilder. This only needs to be created once when robot code starts, not every time you want to create an auto command. A good place to put this is in RobotContainer along with your subsystems.
-        // SwerveAutoBuilder autoBuilder = new SwerveAutoBuilder(
-        //     driveTrain::getPose, // Pose2d supplier// Pose2d consumer, used to reset odometry at the beginning of auto
-        //     driveTrain::resetPose,
-        //     driveTrain.getKinematics(), // SwerveDriveKinematics
-        //     new PIDConstants(.5, 0.0, 0.0), // PID constants to correct for translation error (used to create the X and Y PID controllers)
-        //     new PIDConstants(0.6, 0.0, 0.0), // PID constants to correct for rotation error (used to create the rotation controller)
-        //     driveTrain::setModuleStatesFromTrajectory, // Module states consumer used to output to the drive subsystem
-        //     eventMap,
-        //     true, // Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
-        //     driveTrain // The drive subsystem. Used to properly set the requirements of path following commands
-        // );
-        // driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING);
-        
         Command fullAuto = generateFullAuto(wireCover, driveTrain);
         
             
@@ -156,8 +99,8 @@ public class Autons {
             driveTrain::getPose, // Pose2d supplier// Pose2d consumer, used to reset odometry at the beginning of auto
             driveTrain::resetPose,
             driveTrain.getKinematics(), // SwerveDriveKinematics
-            new PIDConstants(.5, 0.0, 0.0), // PID constants to correct for translation error (used to create the X and Y PID controllers)
-            new PIDConstants(0.6, 0.0, 0.0), // PID constants to correct for rotation error (used to create the rotation controller)
+            new PIDConstants(.550,0.0, 0.0), // PID constants to correct for translation error (used to create the X and Y PID controllers)
+            new PIDConstants(0.575, 0.0, 0.0), // PID constants to correct for rotation error (used to create the rotation controller)
             driveTrain::setModuleStatesFromTrajectory, // Module states consumer used to output to the drive subsystem
             eventMap,
             true, // Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
