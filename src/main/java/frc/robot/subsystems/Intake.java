@@ -257,6 +257,7 @@ public class Intake implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp){
+        SmartDashboard.putString("intake state", m_currentState.toString());
         SmartDashboard.putNumber("Stator Current", getIntakeCurrent());
         SmartDashboard.putNumber("Supply Current", getSupplyCurrent());
         SmartDashboard.putString("intake volts", m_intakeMotor.getSupplyVoltage().toString());

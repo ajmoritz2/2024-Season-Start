@@ -7,7 +7,7 @@ import com.ctre.phoenixpro.controls.MotionMagicVoltage;
 import com.ctre.phoenixpro.hardware.TalonFX;
 
 import com.ctre.phoenixpro.signals.AbsoluteSensorRangeValue;
-// import com.ctre.phoenixpro.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenixpro.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenixpro.signals.SensorDirectionValue;
 
 import com.ctre.phoenixpro.configs.CANcoderConfiguration;
@@ -50,6 +50,9 @@ public class Arm implements Subsystem {
     protected MotionMagicVoltage m_rotateMotorMMV;
     protected CANcoder m_rotateEncoder;
     protected DigitalInput m_rotateLimitSwitch;
+
+    protected double m_rotate_angle;
+    protected double m_rotate_position;
 
 
     private final Intake m_intake;
@@ -152,6 +155,10 @@ public class Arm implements Subsystem {
         cfg.Slot0.kV = 0.0F;
         cfg.Slot0.kS = 0.25F; // Approximately 0.25V to get the mechanism moving
     
+        // tie CANcode on arm rotate shaft to the left motor
+        cfg.Feedback.FeedbackRemoteSensorID = m_rotateEncoder.getDeviceID();
+        cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+
         // cfg.Feedback.SensorToMechanismRatio = 2F;
         
         // cfg.Voltage.PeakForwardVoltage = 3.2; //3.2V is 20% of 16V
@@ -170,8 +177,11 @@ public class Arm implements Subsystem {
         }
 
         m_rotateMotorMMV.OverrideBrakeDurNeutral = true;
-        m_rotateMotor.setRotorPosition(0);
         m_rotateMotor.setVoltage(0);
+
+        //don't set rotor to zero.  User magnet offset instead.
+        //IDLE state will change rotate arm to zero position.
+        // m_rotateMotor.setRotorPosition(0);   
     }
 
     // private void extendEncoderInit(){
@@ -195,8 +205,8 @@ public class Arm implements Subsystem {
         /* Configure CANcoder to zero the magnet appropriately */
         CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
         cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
-        cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-        cc_cfg.MagnetSensor.MagnetOffset = 0.4;   //TODO
+        cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+        //cc_cfg.MagnetSensor.MagnetOffset = 0.4;   //TODO, 0 to 1?  or -.5 to .5 ?
         m_rotateEncoder.getConfigurator().apply(cc_cfg);
 
         /* Speed up signals to an appropriate rate */
@@ -387,12 +397,15 @@ public class Arm implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp){
+        SmartDashboard.putString("arm state", m_currentState.toString());
         SmartDashboard.putBoolean("ExtendLimitSwitch", m_extendLimitSwitch.get());
         SmartDashboard.putBoolean("RotateLimitSwitch", m_rotateLimitSwitch.get());
         SmartDashboard.putString("Extend Motor Pos", m_extendMotor.getPosition().toString());
         SmartDashboard.putString("Rotate Motor Pos", m_rotateMotor.getPosition().toString());
 		SmartDashboard.putString("Extend Motor Temp", m_extendMotor.getDeviceTemp().toString());
 		SmartDashboard.putString("Rotate Motor Temp", m_rotateMotor.getDeviceTemp().toString());
+        SmartDashboard.putNumber("rotate angle commanded", m_rotate_angle);
+        SmartDashboard.putNumber("rotate position commanded", m_rotate_position);
         SmartDashboard.putBoolean("Manual Mode", m_manualMode);
     }
 
@@ -410,13 +423,16 @@ public class Arm implements Subsystem {
    
     public void configRotate(double position){
         m_rotateMotor.setControl(m_rotateMotorMMV.withPosition(position));
+
     }
 
     public void configRotateAngle(double angle){
         //4096 ticks
         //0 position is ARM straight-up
-        double position = Constants.ARM.ROTATEENCODERZEROOFFSET + angle * 4096;
-        configRotate(position);
+        //TODO  not sure to offset this way or use the cc_cfg.MagnetSensor.MagnetOffset 
+        m_rotate_angle = angle;
+        m_rotate_position = (Constants.ARM.ROTATEENCODERZEROOFFSET + m_rotate_angle) * 4096 / 360;
+        configRotate(m_rotate_position);
     }
     
     @Override
@@ -426,17 +442,17 @@ public class Arm implements Subsystem {
 
     @Override
     public void zeroSensors() {
-	    zeroExtendSensor();
-        zeroRotateSensor();
+	    // zeroExtendSensor();
+        // zeroRotateSensor();
     }
    
-    public void zeroExtendSensor(){
-        m_extendMotor.setControl(m_extendMotorMMV.withPosition(0));
-    }
-    public void zeroRotateSensor(){
-        //move arm to vertical '0' position
-        m_rotateMotor.setControl(m_rotateMotorMMV.withPosition(Constants.ARM.ROTATEENCODERZEROOFFSET));
-    }
+    // public void zeroExtendSensor(){
+    //     m_extendMotor.setControl(m_extendMotorMMV.withPosition(0));
+    // }
+    // public void zeroRotateSensor(){
+    //     //move arm to vertical '0' position
+    //     configRotateAngle(0);
+    // }
 
 
     // public void manualControl(double rotateOutput, double armOutput){
