@@ -27,7 +27,7 @@ import frc.robot.auton.commands.*;
 
 public class Autons {
     private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("center", new PathConstraints(2.5, 2));
-    private static PathPlannerTrajectory clear = PathPlanner.loadPath("Clear", new PathConstraints(2.5, 1.5));
+    private static PathPlannerTrajectory clear = PathPlanner.loadPath("Clear", new PathConstraints(2.5, 1.75));
     private static List<PathPlannerTrajectory> wireCover = PathPlanner.loadPathGroup("WireCover", new PathConstraints(2.5, 3));
     
     public static Command center(Drivetrain driveTrain, Arm arm, Intake intake){
