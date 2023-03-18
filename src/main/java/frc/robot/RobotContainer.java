@@ -63,8 +63,9 @@ public class RobotContainer {
 		LiveWindow.setEnabled(false);
 		
 		intake = new Intake(operatorController);
-		arm = new Arm(operatorController,intake);
 		drivetrain = new Drivetrain(driverController);
+
+		arm = new Arm(operatorController,intake, drivetrain);
 		limelight = new Limelight(driverController);
 		
 		manager = new SubsystemManager(0.02);
@@ -89,10 +90,8 @@ public class RobotContainer {
 	private void addressButtons(){
 		
 	 }
-	private void configureButtonBindings() {
-				
-		//firstBall.and(secondBall).whenActive(new InstantCommand(() -> cargoManager.setWantedState(CargoManager.WantedState.SPINUP)));
 
+	private void configureButtonBindings() {
 	}
 
 	private void configureAuton() {

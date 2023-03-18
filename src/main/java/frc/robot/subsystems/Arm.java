@@ -52,14 +52,16 @@ public class Arm implements Subsystem {
     private TrapezoidProfile.State m_setpoint = new TrapezoidProfile.State();
 
     private final Intake intake;
+    private final Drivetrain drivetrain;
 
     private final PS4Controller controller;
 
     private boolean manualMode = false;
 
-    public Arm(PS4Controller controller, Intake intake){
+    public Arm(PS4Controller controller, Intake intake, Drivetrain drivetrain){
 
         this.intake = intake;
+        this.drivetrain = drivetrain;
         this.controller = controller;
 
         liftMotor = new TalonFX(Constants.ARM.EXTENDMOTOR, "MANIPbus");
@@ -224,40 +226,40 @@ public class Arm implements Subsystem {
     {
         switch (currentState){
             case GROUND_ANGLE:
-                configRotate(-85190); //target -88190
+                configRotate(-85190, true); //target -88190
                 configExtend(0);
                 break;
              case MID:
-                configRotate(-42080); //ta  rget -46080
+                configRotate(-42080,true); //ta  rget -46080
                 configExtend(39949); //target 39949
                 break;
             case HIGH:
-                configRotate(-39320); //target-45320
+                configRotate(-39320, true); //target-45320
                 configExtend(116256); //traget 116256
                 break;
             case AUTON_MID:
-                configRotate(46080);
+                configRotate(46080, false);
                 configExtend(39949);
                 break;
             case AUTON_HIGH:
-                configRotate(41320-4000);
+                configRotate(41320-4000, false);
                 configExtend(112256);
                 break;
             case MANUAL:
                 manualControl(controller.getLeftX(), -controller.getRightY());
                 break;
             case HUMAN_FOLD:
-                configRotate(-41320);
+                configRotate(-41320, false);
                 configExtend(0);
                 break;
             case ZERO:
-                configRotate(70057);
+                configRotate(70057, false);
                 configExtend(0);
                 break;
             default:
             case NEUTRAL:
                 // neutralize();
-                configRotate(0);
+                configRotate(0, false);
                 configExtend(0);
                 break;
             
@@ -304,8 +306,13 @@ public class Arm implements Subsystem {
         liftMotor.set(ControlMode.Position, position);
     }
    
-    public void configRotate(double pos){
+    public void configRotate(double pos, boolean yawDependent){
         //rotateMotorLeft.set(ControlMode.Position, pos);
+        if (yawDependent &&
+            (drivetrain.getYaw().getDegrees() < 90 && drivetrain.getYaw().getDegrees() > -90)){
+
+            rotateMotorRight.set(ControlMode.Position, -pos);
+        }
         rotateMotorRight.set(ControlMode.Position, pos);
     }
     
