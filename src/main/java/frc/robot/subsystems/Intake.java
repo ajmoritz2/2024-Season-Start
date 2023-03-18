@@ -77,14 +77,9 @@ public class Intake implements Subsystem {
         // cfg.Slot0.kV = 0.12; // Falcon 500 is a 500kV motor, 500rpm per V = 8.333 rps per V, 1/8.33 = 0.12 volts / Rotation per second
         // Peak output of 8 volts
 
-        //1d
-		
-		// was
-		//  intakeMotor.configPeakOutputForward(1);
-		//intakeMotor.configPeakOutputReverse(-1);
-		// which was max?  so no peak to set
-   		// cfg.Voltage.PeakForwardVoltage = 2;    
-        // cfg.Voltage.PeakReverseVoltage = -2;
+
+   		cfg.Voltage.PeakForwardVoltage = 11;    
+        cfg.Voltage.PeakReverseVoltage = -11;
 
         // /* Torque-based velocity does not require a feed forward, as torque will accelerate the rotor up to the desired velocity by itself */
         // cfg.Slot1.kP = 5; // An error of 1 rotation per second results in 5 amps output
@@ -93,20 +88,14 @@ public class Intake implements Subsystem {
 
         //1e
         // Peak output of 40 amps
-        cfg.TorqueCurrent.PeakForwardTorqueCurrent = 40;
-        cfg.TorqueCurrent.PeakReverseTorqueCurrent = -40;
-
-
-        // any unmodified configs in a configuration object are *automatically* factory-defaulted;
-        // user can perform a full factory default by passing a new configuration object
-        // m_intakeMotor.getConfigurator().apply(new TalonFXConfiguration());
-
-        // cfg.Voltage.PeakForwardVoltage = 2;  // 2V of 16V
-        // cfg.Voltage.PeakForwardVoltage = -2; //-2V of 16V
-
+        // cfg.TorqueCurrent.PeakForwardTorqueCurrent = 40;
+        // cfg.TorqueCurrent.PeakReverseTorqueCurrent = -40;
+ 
+        // TODO:  limit we are looking for is 100Amps and 200Amps?   That is really hight!
+        // Max is +/- 347Amps.  we were not setting a max in ManualMerge.
         // cfg.CurrentLimits.SupplyCurrentLimitEnable = true;
         // cfg.CurrentLimits.SupplyCurrentLimit = 15.0;
-        // m_intakeMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
+        //m_intakeMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
 
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for(int i = 0; i < 5; ++i) {
@@ -258,8 +247,8 @@ public class Intake implements Subsystem {
     @Override
     public void outputTelemetry(double timestamp){
         SmartDashboard.putString("intake state", m_currentState.toString());
-        SmartDashboard.putNumber("Stator Current", getIntakeCurrent());
-        SmartDashboard.putNumber("Supply Current", getSupplyCurrent());
+        SmartDashboard.putNumber("intake Stator Current", getIntakeCurrent());
+        SmartDashboard.putNumber("intake Supply Current", getSupplyCurrent());
         SmartDashboard.putString("intake volts", m_intakeMotor.getSupplyVoltage().toString());
         SmartDashboard.putString("intake Pos", m_intakeMotor.getPosition().toString());
         SmartDashboard.putString("intake Vel", m_intakeMotor.getVelocity().toString());

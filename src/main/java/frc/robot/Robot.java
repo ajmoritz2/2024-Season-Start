@@ -38,7 +38,7 @@ public class Robot extends TimedRobot {
     }
 
     m_robotContainer.arm.zeroExtendSensor();
-    m_robotContainer.arm.zeroRotateSensor();
+    // m_robotContainer.arm.zeroRotateSensor();
   }
 
   @Override
