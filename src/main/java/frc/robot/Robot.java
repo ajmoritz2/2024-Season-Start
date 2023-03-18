@@ -82,7 +82,11 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
+    // TODO: Test to see if these break/make the robot better
     m_robotContainer.enableState = RobotContainer.EnableState.DISABLED;
+    m_robotContainer.drivetrain.setWantedState(Drivetrain.WantedState.IDLE);
+    m_robotContainer.stopSubsystems();
+
   }
 
   @Override

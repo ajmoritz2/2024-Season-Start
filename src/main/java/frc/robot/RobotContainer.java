@@ -89,10 +89,8 @@ public class RobotContainer {
 	private void addressButtons(){
 		
 	 }
-	private void configureButtonBindings() {
-				
-		//firstBall.and(secondBall).whenActive(new InstantCommand(() -> cargoManager.setWantedState(CargoManager.WantedState.SPINUP)));
 
+	private void configureButtonBindings() {
 	}
 
 	private void configureAuton() {
