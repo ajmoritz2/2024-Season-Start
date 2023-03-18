@@ -54,7 +54,7 @@ public class Drivetrain implements Subsystem {
 
     private final SlewRateLimiter slewX = new SlewRateLimiter(9);
     private final SlewRateLimiter slewY = new SlewRateLimiter(9);
-    private final SlewRateLimiter slewRot = new SlewRateLimiter(.5);
+    private final SlewRateLimiter slewRot = new SlewRateLimiter(1.5);
 
  
     private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
@@ -196,7 +196,7 @@ public class Drivetrain implements Subsystem {
 
         periodicIO.modifiedJoystickX = slewX.calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
         periodicIO.modifiedJoystickY = slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
-        periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND));
+        periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND))*0.5;
         
 
         double[] chassisVelocity = chassisSpeedsGetter();

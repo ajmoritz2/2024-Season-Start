@@ -54,6 +54,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_robotContainer.enableState = RobotContainer.EnableState.AUTON;
+    m_robotContainer.drivetrain.resetOdometry();
 
 		autonomousCommand = m_robotContainer.getAutonChooser().getSelected();
 
