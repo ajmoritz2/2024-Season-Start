@@ -63,8 +63,9 @@ public class RobotContainer {
 		LiveWindow.setEnabled(false);
 		
 		intake = new Intake(operatorController);
-		arm = new Arm(operatorController,intake);
 		drivetrain = new Drivetrain(driverController);
+
+		arm = new Arm(operatorController,intake, drivetrain);
 		limelight = new Limelight(driverController);
 		
 		manager = new SubsystemManager(0.02);
