@@ -82,7 +82,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
-    m_robotContainer.enabledState = RobotContainer.EnableState.DISABLED;
+    m_robotContainer.enableState = RobotContainer.EnableState.DISABLED;
   }
 
   @Override
