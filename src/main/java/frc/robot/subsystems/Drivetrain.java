@@ -54,7 +54,7 @@ public class Drivetrain implements Subsystem {
 
     private final SlewRateLimiter slewX = new SlewRateLimiter(9);
     private final SlewRateLimiter slewY = new SlewRateLimiter(9);
-    private final SlewRateLimiter slewRot = new SlewRateLimiter(1.5);
+    private final SlewRateLimiter slewRot = new SlewRateLimiter(1880);
 
  
     private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
@@ -209,6 +209,7 @@ public class Drivetrain implements Subsystem {
             setWantedState(WantedState.AUTO_BALANCE);
         if(controller.getAButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
+        
         crawling = controller.getRightBumper();
 
         pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
