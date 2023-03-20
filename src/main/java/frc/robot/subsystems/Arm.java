@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenixpro.StatusCode;
 import com.ctre.phoenixpro.configs.TalonFXConfiguration;
+import com.ctre.phoenixpro.controls.MotionMagicDutyCycle;
 import com.ctre.phoenixpro.controls.MotionMagicVoltage;
 import com.ctre.phoenixpro.hardware.TalonFX;
 
@@ -99,7 +100,7 @@ public class Arm implements Subsystem {
 		// liftMotor.configPeakOutputReverse(-0.5);
 		// liftMotor.setSensorPhase(true);
 		
-        cfg.Slot0.kP = 4.0F;
+        cfg.Slot0.kP = 20.0F;
         cfg.Slot0.kI = 0.0F;
         cfg.Slot0.kD = 0.0F;
         cfg.Slot0.kV = 0.0F;
@@ -132,6 +133,7 @@ public class Arm implements Subsystem {
 	private void rotateMotorInit(){
         m_rotateMotor = new TalonFX(Constants.ARM.ROTATEMOTOR, "MANIPbus");
         m_rotateMotorMMV = new MotionMagicVoltage(0);  
+        // m_rotateMotorMMV = new MotionMagicDutyCycle(0);
 
         TalonFXConfiguration cfg = new TalonFXConfiguration();
         /* Configure current limits */
@@ -148,7 +150,8 @@ public class Arm implements Subsystem {
 		// rotateMotorRight.configPeakOutputForward(0.3);
         // rotateMotorRight.configPeakOutputReverse(-0.3);
 		// rotateMotorRight.setSensorPhase(true);
-		
+		m_rotateMotor.setInverted(true);
+        
         cfg.Slot0.kP = 2.0F;
         cfg.Slot0.kI = 0.0F;
         cfg.Slot0.kD = 0.0F;
@@ -157,9 +160,9 @@ public class Arm implements Subsystem {
     
         // tie CANcode on arm rotate shaft to the left motor
         cfg.Feedback.FeedbackRemoteSensorID = m_rotateEncoder.getDeviceID();
-        // cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
-        cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-
+        cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+        // cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        // cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
         // cfg.Feedback.SensorToMechanismRatio = 2F;
         
         // cfg.Voltage.PeakForwardVoltage = 3.2; //3.2V is 20% of 16V
@@ -182,7 +185,8 @@ public class Arm implements Subsystem {
 
         //don't set rotor to zero.  Use magnet offset instead.
         //NEUTRAL state will change rotate arm to zero position (i.e. vertical).
-        // m_rotateMotor.setRotorPosition(0);   
+        // m_rotateMotor.setRotorPosition(0);  
+        zeroRotateSensor(); 
     }
 
     // private void extendEncoderInit(){
@@ -205,15 +209,19 @@ public class Arm implements Subsystem {
 
         /* Configure CANcoder to zero the magnet appropriately */
         CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
+    
+        // cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
         cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
+        // cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
         cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-        cc_cfg.MagnetSensor.MagnetOffset = -.82;  // -1.82;
+        // cc_cfg.MagnetSensor.MagnetOffset = 0.1; //0; // 3.24; //0; //-2.82; //-1.82; //-1.2; //-1.52; //-1.77; // -1.866; //-1.74; //-1.82;
         m_rotateEncoder.getConfigurator().apply(cc_cfg);
 
         /* Speed up signals to an appropriate rate */
         m_rotateEncoder.getPosition().setUpdateFrequency(100);
         m_rotateEncoder.getVelocity().setUpdateFrequency(100);
     }
+    
     @Override
     public void processLoop(double timestamp) {
         
@@ -288,7 +296,12 @@ public class Arm implements Subsystem {
                 setWantedState(SystemState.NEUTRAL);
 
             if(m_controller.getCircleButtonPressed())
+                {
                 setWantedState(SystemState.MID);
+                configExtend(9.75);    //39949/4096
+                // configRotate(-10.2);   //TODO: tweak angle
+                configRotate(-0.15);   //TODO: tweak angle
+                }
 
             if(m_controller.getTriangleButtonPressed())
                 setWantedState(SystemState.NEUTRAL);
@@ -335,12 +348,13 @@ public class Arm implements Subsystem {
                 break;
              case MID:			
 				// configRotate(-10.2);  //-42080/4096
-                configRotateAngle(45);   //TODO: tweak angle
-                configExtend(9.75);    //39949/4096
+                // configRotateAngle(-45);   //TODO: tweak angle
+                // configExtend(9.75);    //39949/4096
                 break;
             case HIGH:
 				// configRotate(-9.6);   //-39320/4096
-                configRotateAngle(45);   //TODO: tweak angle
+                configRotate(-.3);   //-39320/4096
+                // configRotateAngle(45);   //TODO: tweak angle
 				configExtend(28.38);     //116256/4096
                 break;
             case AUTON_MID:
@@ -427,6 +441,7 @@ public class Arm implements Subsystem {
    
     public void configRotate(double position){
         //position is number of rotations, not number of ticks
+        
         m_rotateMotor.setControl(m_rotateMotorMMV.withPosition(position));
     }
 
@@ -448,19 +463,21 @@ public class Arm implements Subsystem {
     @Override
     public void zeroSensors() {
 	    zeroExtendSensor();
-        // zeroRotateSensor();
+        zeroRotateSensor();
     }
    
     public void zeroExtendSensor(){
         // m_extendMotor.setControl(m_extendMotorMMV.withPosition(0));
         m_extendMotor.setRotorPosition(0);
     }
-    // public void zeroRotateSensor(){
-    //     //move arm to vertical '0' position
-    //     configRotateAngle(0);
+    public void zeroRotateSensor(){
+        //move arm to vertical '0' position
+        // configRotateAngle(0);
+        m_rotateMotor.setRotorPosition(0);
+        m_rotateEncoder.setPosition(0);
     //  No need to zero.   absolute CAN coder position will be used.
     //  so if it starts off zero, it will go to zero upon going to Nuetral state 
-    // }
+    }
 
 
     // public void manualControl(double rotateOutput, double armOutput){

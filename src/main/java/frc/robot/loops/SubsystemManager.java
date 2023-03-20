@@ -92,7 +92,7 @@ public class SubsystemManager {
 			double et = Timer.getFPGATimestamp();
 
 			if (et - st > 0.01) {
-//				DriverStation.reportError(String.format("%s.readPeriodicInputs took too long: %s", subsystem.getId(), et - st), false);
+				DriverStation.reportError(String.format("%s.readPeriodicInputs took too long: %s", subsystem.getId(), et - st), false);
 			}
 		}));
 
@@ -104,7 +104,7 @@ public class SubsystemManager {
 			double et = Timer.getFPGATimestamp();
 
 			if (et - st > 0.01) {
-//				DriverStation.reportError(String.format("%s.onLoop took too long: %s", loop.getId(), et - st), false);
+				DriverStation.reportError(String.format("%s.processLoop took too long: %s", loop.getId(), et - st), false);
 			}
 		}));
 
@@ -116,7 +116,7 @@ public class SubsystemManager {
 			double et = Timer.getFPGATimestamp();
 
 			if (et - st > 0.01) {
-//				DriverStation.reportError(String.format("%s.writePeriodicOutputs took too long: %s", subsystem.getId(), et - st), false);
+				DriverStation.reportError(String.format("%s.writePeriodicOutputs took too long: %s", subsystem.getId(), et - st), false);
 			}
 		}));
 
@@ -134,7 +134,7 @@ public class SubsystemManager {
 			double et = Timer.getFPGATimestamp();
 
 			if (et - st > 0.01) {
-//				DriverStation.reportError(String.format("%s.outputTelemetry took too long: %s", subsystem.getId(), et - st), false);
+				DriverStation.reportError(String.format("%s.outputTelemetry took too long: %s", subsystem.getId(), et - st), false);
 			}
 		}));
 		threadPool.awaitQuiescence(10, TimeUnit.MILLISECONDS);
