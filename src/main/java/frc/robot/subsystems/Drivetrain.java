@@ -65,14 +65,16 @@ public class Drivetrain implements Subsystem {
         IDLE,   
         MANUAL_CONTROL,
         TRAJECTORY_FOLLOWING,           //X,Y axis speeds relative to field
-        AUTO_BALANCE
+        AUTO_BALANCE,
+        LOCK_ROTATION
     }
 
     public enum WantedState{
         IDLE,
         MANUAL_CONTROL,
         TRAJECTORY_FOLLOWING,
-        AUTO_BALANCE
+        AUTO_BALANCE,
+        LOCK_ROTATION
     }
 
     private static class PeriodicIO {
@@ -173,6 +175,9 @@ public class Drivetrain implements Subsystem {
             case TRAJECTORY_FOLLOWING:
                 newState = handleTrajectoryFollowing();
                 break;
+            case LOCK_ROTATION:
+                newState = handleManualControl();
+                break;
             case IDLE:
                 newState = handleManualControl();
                 break;
@@ -237,6 +242,10 @@ public class Drivetrain implements Subsystem {
                 moduleStates = autoBalance();
                 //System.out.println("IN balance");
                 break;
+            case LOCK_ROTATION:
+                correctRotation(180);
+                moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRotation(180), !periodicIO.robotOrientedModifier);
+                break;
             case MANUAL_CONTROL:
                 moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
                 break;
@@ -255,6 +264,22 @@ public class Drivetrain implements Subsystem {
     @Override
     public void periodic() {
         
+    }
+
+    private double correctRotation(double goal){
+        double steeringAdjust = 0;
+        double maxJoystickRadians = Math.PI;
+        final double heading_error = getYaw().getRadians()- Math.toRadians(goal);
+        final double Kp = -0.0001;
+        final double min_command = 0.06;
+    
+        if(Math.abs(heading_error)>1.0){
+            if(heading_error<0)
+              steeringAdjust = Kp*heading_error+min_command;
+            else
+              steeringAdjust = Kp*heading_error-min_command;
+        }
+        return Math.min(1,steeringAdjust/maxJoystickRadians);
     }
 
     private double halfWhenCrawl(double val){
@@ -298,6 +323,8 @@ public class Drivetrain implements Subsystem {
             default:
             case MANUAL_CONTROL:
                 return SystemState.MANUAL_CONTROL;
+            case LOCK_ROTATION:
+                return SystemState.LOCK_ROTATION;
 		}
 	}
 
