@@ -343,12 +343,12 @@ public class Drivetrain implements Subsystem {
     @Override
     public void outputTelemetry(double timestamp) {
         
-        SmartDashboard.putString("drivetrain/currentState", currentState.toString());
-        SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
-        SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);
-        SmartDashboard.putNumber("ModifiedX", periodicIO.modifiedJoystickX);
-        SmartDashboard.putNumber("ModifiedY", periodicIO.modifiedJoystickY);
-        SmartDashboard.putNumber("ModifiedR", periodicIO.modifiedJoystickR);
+        // SmartDashboard.putString("drivetrain/currentState", currentState.toString());
+        // SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
+        // SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);
+        // SmartDashboard.putNumber("ModifiedX", periodicIO.modifiedJoystickX);
+        // SmartDashboard.putNumber("ModifiedY", periodicIO.modifiedJoystickY);
+        // SmartDashboard.putNumber("ModifiedR", periodicIO.modifiedJoystickR);
         // SmartDashboard.putString("drivetrain/currentStates", currentState.name());
         // SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
         // SmartDashboard.putString("drivetrain/pose",odometry.getPoseMeters().toString());
