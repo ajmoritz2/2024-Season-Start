@@ -29,7 +29,7 @@ public class Drivetrain implements Subsystem {
   
     public static final double MAX_VOLTAGE = 11.0;
   
-    public static final double MAX_VELOCITY_METERS_PER_SECOND = 4.94;
+    public static final double MAX_VELOCITY_METERS_PER_SECOND = 5.36;
 
     public static double pitchAngle = 0;
  
