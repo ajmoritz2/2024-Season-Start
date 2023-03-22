@@ -106,11 +106,6 @@ public class Intake implements Subsystem {
           System.out.println("Could not configure extend motor. Error: " + status.toString());
         }
 
-        //TODO
-		// cfg setting for Brake mode
-		// liftMotor.setNeutralMode(NeutralMode.Brake);
-
-
         m_voltageOut = new VoltageOut(0).withOverrideBrakeDurNeutral(true);
 
         setIntakeSpeed(0);
@@ -233,7 +228,7 @@ public class Intake implements Subsystem {
     }
 
     public void setIntakeSpeed(double percent){
-        double outVolts = percent * Constants.MAX_SUPPLY_VOLTAGE;
+        double outVolts = percent * Constants.INTAKE.MAX_SUPPLY_VOLTAGE;
         m_intakeMotor.setControl(m_voltageOut.withOutput(outVolts));
     }
 

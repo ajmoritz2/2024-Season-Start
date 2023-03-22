@@ -18,9 +18,6 @@ public final class Constants {
     public static final double BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES = 6.8;
     public static final double BALANCEDMAXSPEED = 3;
     public static final double BALANCED_OFFESET = 2.3;
-	
-	public static final double MAX_SUPPLY_VOLTAGE = 10.0;
-
 
     public static final class Swerve {
        
@@ -196,21 +193,14 @@ public final class Constants {
     }
 
     public class ARM {
-        //TODO find this offset value
-        public static final int EXTENDENCODERZEROOFFSET = 400;   //arm in vertical position is zero.  this is the encoder position reported.
-        public static final int ROTATEENCODERZEROOFFSET = 400;   //arm in vertical position is zero.  this is the encoder position reported.
-
         public static final int EXTENDMOTOR = 13;
 		public static final int ROTATEMOTOR = 12;
         public static final int EXTENDENCODER = 20;
         public static final int ROTATEENCODER = 21;
-
-        public static final float MAXEXTENDOSPEED = 0.2F;
-
-        public static final float MAXROTATOSPEED = 0.2F;
-        public static final int ROTATE_DEADRANGE = 0;
     }
     public final static class INTAKE {
         public static final int INTAKE_MOTOR = 14;
+
+        public static final double MAX_SUPPLY_VOLTAGE = 10.0;
     }
 }

@@ -65,7 +65,7 @@ public class RobotContainer {
 		intake = new Intake(operatorController);
 		drivetrain = new Drivetrain(driverController);
 
-		arm = new Arm(operatorController,intake, drivetrain);
+		arm = new Arm(operatorController,intake);
 		limelight = new Limelight(driverController);
 		
 		manager = new SubsystemManager(0.02);
