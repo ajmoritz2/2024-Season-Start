@@ -126,8 +126,9 @@ public class Arm implements Subsystem {
         }
 
         m_extendMotorMMV.OverrideBrakeDurNeutral = true;
-        m_extendMotor.setRotorPosition(0);
         m_extendMotor.setVoltage(0);
+
+        zeroExtendSensor();
     }
 
 	private void rotateMotorInit(){
@@ -183,9 +184,6 @@ public class Arm implements Subsystem {
         m_rotateMotorMMV.OverrideBrakeDurNeutral = true;
         m_rotateMotor.setVoltage(0);
 
-        //don't set rotor to zero.  Use magnet offset instead.
-        //NEUTRAL state will change rotate arm to zero position (i.e. vertical).
-        // m_rotateMotor.setRotorPosition(0);  
         zeroRotateSensor(); 
     }
 
@@ -471,12 +469,13 @@ public class Arm implements Subsystem {
         m_extendMotor.setRotorPosition(0);
     }
     public void zeroRotateSensor(){
-        //move arm to vertical '0' position
-        // configRotateAngle(0);
         m_rotateMotor.setRotorPosition(0);
         m_rotateEncoder.setPosition(0);
-    //  No need to zero.   absolute CAN coder position will be used.
-    //  so if it starts off zero, it will go to zero upon going to Nuetral state 
+        //move arm to vertical '0' position
+        // configRotateAngle(0);
+        //  No need to zero.   absolute CAN coder position will be used.
+        //  so if it starts off zero, it will go to zero upon going to Nuetral state 
+        //NOPE, magnet offset did not work.   go back to set rotor to zero.
     }
 
 
