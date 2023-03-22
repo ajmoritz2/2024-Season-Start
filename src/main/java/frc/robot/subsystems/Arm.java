@@ -3,8 +3,8 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenixpro.StatusCode;
 import com.ctre.phoenixpro.configs.TalonFXConfiguration;
-import com.ctre.phoenixpro.controls.MotionMagicDutyCycle;
 import com.ctre.phoenixpro.controls.MotionMagicVoltage;
+import com.ctre.phoenixpro.controls.VoltageOut;
 import com.ctre.phoenixpro.hardware.TalonFX;
 
 import com.ctre.phoenixpro.signals.AbsoluteSensorRangeValue;
@@ -51,6 +51,7 @@ public class Arm implements Subsystem {
     protected MotionMagicVoltage m_rotateMotorMMV;
     protected CANcoder m_rotateEncoder;
     protected DigitalInput m_rotateLimitSwitch;
+    protected VoltageOut m_rotateVoltageOut;
 
     protected double m_rotate_angle;
     protected double m_rotate_rotations;
@@ -71,14 +72,10 @@ public class Arm implements Subsystem {
         m_extendLimitSwitch = new DigitalInput(9);
 
         //---------------------------------------------------------------------
-        rotateEncoderInit();
+        // rotateEncoderInit();
         rotateMotorInit();
 		m_rotateLimitSwitch = new DigitalInput(0);
-        //--------------------------------------------------------------------- 
-        // feedforward = new ElevatorFeedforward(0.01, 0, 0.06);
-        // liftMotor.setSensorPhase(true);
-        // rotateMotorLeft.setSensorPhase(true);
-        // rotateMotorRight.setSensorPhase(true);
+
     }
 
     private void extendMotorInit(){
@@ -134,7 +131,9 @@ public class Arm implements Subsystem {
 	private void rotateMotorInit(){
         m_rotateMotor = new TalonFX(Constants.ARM.ROTATEMOTOR, "MANIPbus");
         m_rotateMotorMMV = new MotionMagicVoltage(0);  
-        // m_rotateMotorMMV = new MotionMagicDutyCycle(0);
+
+        // for manual control we need to use voltageout
+        m_rotateVoltageOut = new VoltageOut(0).withOverrideBrakeDurNeutral(true);
 
         TalonFXConfiguration cfg = new TalonFXConfiguration();
         /* Configure current limits */
@@ -159,18 +158,18 @@ public class Arm implements Subsystem {
         cfg.Slot0.kV = 0.0F;
         cfg.Slot0.kS = 0.25F; // Approximately 0.25V to get the mechanism moving
     
-        // tie CANcode on arm rotate shaft to the left motor
-        cfg.Feedback.FeedbackRemoteSensorID = m_rotateEncoder.getDeviceID();
-        cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
-        // cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-        // cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        // cfg.Feedback.SensorToMechanismRatio = 2F;
+        // // tie CANcode on arm rotate shaft to the left motor
+        // cfg.Feedback.FeedbackRemoteSensorID = m_rotateEncoder.getDeviceID();
+        // cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+        // // cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        // // cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+        // // cfg.Feedback.SensorToMechanismRatio = 2F;
         
-        // cfg.Voltage.PeakForwardVoltage = 3.2; //3.2V is 20% of 16V
-        // cfg.Voltage.PeakForwardVoltage = -3.2; //3.2V is 20% of 16V
+        // // cfg.Voltage.PeakForwardVoltage = 3.2; //3.2V is 20% of 16V
+        // // cfg.Voltage.PeakForwardVoltage = -3.2; //3.2V is 20% of 16V
 
-        // cfg.CurrentLimits.SupplyCurrentLimitEnable = true;
-        // cfg.CurrentLimits.SupplyCurrentLimit = 15.0;
+        // // cfg.CurrentLimits.SupplyCurrentLimitEnable = true;
+        // // cfg.CurrentLimits.SupplyCurrentLimit = 15.0;
 
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for(int i = 0; i < 5; ++i) {
@@ -202,23 +201,23 @@ public class Arm implements Subsystem {
     //     m_extendEncoder.getVelocity().setUpdateFrequency(100);
     // }
 
-    private void rotateEncoderInit(){
-        m_rotateEncoder = new CANcoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
+    // private void rotateEncoderInit(){
+    //     m_rotateEncoder = new CANcoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
 
-        /* Configure CANcoder to zero the magnet appropriately */
-        CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
+    //     /* Configure CANcoder to zero the magnet appropriately */
+    //     CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
     
-        // cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
-        cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
-        // cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
-        cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-        // cc_cfg.MagnetSensor.MagnetOffset = 0.1; //0; // 3.24; //0; //-2.82; //-1.82; //-1.2; //-1.52; //-1.77; // -1.866; //-1.74; //-1.82;
-        m_rotateEncoder.getConfigurator().apply(cc_cfg);
+    //     // cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
+    //     cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
+    //     // cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+    //     cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+    //     // cc_cfg.MagnetSensor.MagnetOffset = 0.1; //0; // 3.24; //0; //-2.82; //-1.82; //-1.2; //-1.52; //-1.77; // -1.866; //-1.74; //-1.82;
+    //     m_rotateEncoder.getConfigurator().apply(cc_cfg);
 
-        /* Speed up signals to an appropriate rate */
-        m_rotateEncoder.getPosition().setUpdateFrequency(100);
-        m_rotateEncoder.getVelocity().setUpdateFrequency(100);
-    }
+    //     /* Speed up signals to an appropriate rate */
+    //     m_rotateEncoder.getPosition().setUpdateFrequency(100);
+    //     m_rotateEncoder.getVelocity().setUpdateFrequency(100);
+    // }
     
     @Override
     public void processLoop(double timestamp) {
@@ -262,27 +261,16 @@ public class Arm implements Subsystem {
 
     @Override
     public void readPeriodicInputs(double timestamp) {
-        // Yes I am going to use short hand if statements because it looks better.
-        // (condition) ? true : false;
+  
+       if(!m_extendLimitSwitch.get())
+           zeroExtendSensor();
 
-        // I also do != Neutral because that should make sure it isn't in some weird mode and have some motors clash
-        // Examples of controller inputs:
-
-    //    if (controller.getAButtonReleased())
-    //         wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.EXTEND; 
-       
-
-    //    if (controller.getBButtonReleased())
-    //     wantedState = (currentState != SystemState.NEUTRAL) ? SystemState.NEUTRAL : SystemState.RETRACT;  
-
-//TODO  - not sure need these anymore with encode on shaft
-//        or at least zeroed differently now     
-//        if(!extendLimitSwitch.get())
-//            zeroArmSensors();
-//
-//        if(!rotateLimitSwitch.get())
-//            rotateMotor.setSelectedSensorPosition(5174);
-//            // zeroRotateSensors();
+       if(!m_rotateLimitSwitch.get())
+           //TODO, how to do this with Pro API
+           //m_rotateMotor.setSelectedSensorPosition(5174);
+           // //zeroRotateSensor();
+           //TODO - really don't know how to do this  5174/4096 = 
+           m_rotateMotor.setRotorPosition(1.26);
 
         if (!(m_currentState == SystemState.MANUAL)){
             if(m_intake.getIntakeCurrent()>=200 && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
@@ -294,12 +282,7 @@ public class Arm implements Subsystem {
                 setWantedState(SystemState.NEUTRAL);
 
             if(m_controller.getCircleButtonPressed())
-                {
                 setWantedState(SystemState.MID);
-                configExtend(9.75);    //39949/4096
-                // configRotate(-10.2);   //TODO: tweak angle
-                configRotate(-0.15);   //TODO: tweak angle
-                }
 
             if(m_controller.getTriangleButtonPressed())
                 setWantedState(SystemState.NEUTRAL);
@@ -316,7 +299,7 @@ public class Arm implements Subsystem {
             
         } else {
             if (m_controller.getOptionsButtonPressed()){
-                // TODO - what is this doing?
+                // TODO, how to do this with Pro API
                 // m_rotateMotor.setSelectedSensorPosition(0);
             }
         }
@@ -339,52 +322,51 @@ public class Arm implements Subsystem {
         switch (m_currentState){
             case GROUND_ANGLE:
 				//4096 ticks in a revolution
-				// configRotate(-20.8);   //-85190/4096
-                configRotateAngle(90);   // TODO: test -90, if it works put -114
+				configRotate(-20.8);   //-85190/4096
+                // configRotateAngle(-110);
 				configExtend(0);	
                 break;
              case MID:			
-				// configRotate(-10.2);  //-42080/4096
+				configRotate(-10.2);  //-42080/4096
                 // configRotateAngle(-45);   //TODO: tweak angle
-                // configExtend(9.75);    //39949/4096
+                configExtend(9.75);    //39949/4096
                 break;
             case HIGH:
-				// configRotate(-9.6);   //-39320/4096
-                configRotate(-.3);   //-39320/4096
+				configRotate(-9.6);   //-39320/4096
+                // configRotate(-.3);   //-39320/4096
                 // configRotateAngle(45);   //TODO: tweak angle
 				configExtend(28.38);     //116256/4096
                 break;
             case AUTON_MID:
 				// TODO - check this rotate.  shouldn't just be opposite MID ?
-                // configRotate(11.2);   //46080/4096
-                configRotateAngle(-45);   //TODO: tweak angle
+                configRotate(11.2);   //46080/4096
+                // configRotateAngle(-45);   //TODO: tweak angle
                 configExtend(9.75);    //39949/4096
                 break;
             case AUTON_HIGH:
 				//TODO - check this rotate.  shouldn't just be opposite HIGH ?
-				// configRotate(9.1);    //(41320-4000)/4096
-                configRotateAngle(-45);   //TODO: tweak angle
+				configRotate(9.1);    //(41320-4000)/4096
+                // configRotateAngle(-45);   //TODO: tweak angle
 				configExtend(27.41);     //112256/4096
                 break;
-            // case MANUAL:
-            //     manualControl(m_controller.getLeftX(), -m_controller.getRightY());
-            //     break;
+            case MANUAL:
+                manualControl(m_controller.getLeftX(), -m_controller.getRightY());
+                break;
             case HUMAN_FOLD:
-				// configRotate(-10.1);   //-41320/4096
-                configRotateAngle(40);   //TODO: tweak angle
+				configRotate(-10.1);   //-41320/4096
+                // configRotateAngle(40);   //TODO: tweak angle
                 configExtend(0);
                 break;
             case ZERO:
-				// configRotate(17.1);   //70057/4096
-                //TODO, do we need this now?
-                configRotateAngle(-17.10);
+				configRotate(17.1);   //70057/4096
+                // configRotateAngle(-17.10);
                 configExtend(0);
                 break;
             default:
             case NEUTRAL:
                 // neutralize();
-                // configRotate(0);
-                configRotateAngle(0);
+                configRotate(0);
+                // configRotateAngle(0);
                 configExtend(0);
                 break;
             
@@ -417,7 +399,7 @@ public class Arm implements Subsystem {
         SmartDashboard.putString("Rotate Motor Pos", m_rotateMotor.getPosition().toString());
 		SmartDashboard.putString("Extend Motor Temp", m_extendMotor.getDeviceTemp().toString());
 		SmartDashboard.putString("Rotate Motor Temp", m_rotateMotor.getDeviceTemp().toString());
-        SmartDashboard.putNumber("rotate angle commanded", m_rotate_angle);
+        // SmartDashboard.putNumber("rotate angle commanded", m_rotate_angle);
         SmartDashboard.putNumber("rotate rotations commanded", m_rotate_rotations);
         SmartDashboard.putBoolean("Manual Mode", m_manualMode);
         SmartDashboard.putString("rotate encoder pos", m_rotateEncoder.getPosition().toString());
@@ -438,15 +420,15 @@ public class Arm implements Subsystem {
    
     public void configRotate(double position){
         //position is number of rotations, not number of ticks
-        
+        m_rotate_rotations = position;
         m_rotateMotor.setControl(m_rotateMotorMMV.withPosition(position));
     }
 
-    public void configRotateAngle(double angle){
-        m_rotate_angle = angle;
-        m_rotate_rotations = (m_rotate_angle) / 360;
-        configRotate(m_rotate_rotations);
-    }
+    // public void configRotateAngle(double angle){
+    //     m_rotate_angle = angle;
+    //     m_rotate_rotations = (m_rotate_angle) / 360;
+    //     configRotate(m_rotate_rotations);
+    // }
     
     @Override
     public boolean checkSystem() {
@@ -460,9 +442,9 @@ public class Arm implements Subsystem {
     }
    
     public void zeroExtendSensor(){
-        // m_extendMotor.setControl(m_extendMotorMMV.withPosition(0));
         m_extendMotor.setRotorPosition(0);
     }
+
     public void zeroRotateSensor(){
         m_rotateMotor.setRotorPosition(0);
         m_rotateEncoder.setPosition(0);
@@ -474,15 +456,15 @@ public class Arm implements Subsystem {
     }
 
 
-    // public void manualControl(double rotateOutput, double armOutput){
-    //     m_rotateMotor.set(ControlMode.PercentOutput, rotateOutput/4);
-    //     if (!m_extendLimitSwitch.get() && armOutput < 0){
-    //         m_extendMotor.set(ControlMode.PercentOutput, 0);
-    //     } else {
-    //         m_extendMotor.set(ControlMode.PercentOutput, armOutput);
-    //     }
-        
-    // }
+    public void manualControl(double rotatePercentOutput, double armPercentOutput){
+        m_rotateMotor.setControl(m_rotateVoltageOut.withOutput(Constants.ARM.MAX_MANUAL_SUPPLY_VOLTAGE*rotatePercentOutput/4));
+
+        if (!m_extendLimitSwitch.get() && armPercentOutput < 0){
+            m_extendMotor.setControl(m_rotateVoltageOut.withOutput(0));
+        } else {
+            m_extendMotor.setControl(m_rotateVoltageOut.withOutput(Constants.ARM.MAX_MANUAL_SUPPLY_VOLTAGE*armPercentOutput));
+        }
+    }
 
 
     @Override
