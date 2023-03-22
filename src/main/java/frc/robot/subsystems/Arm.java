@@ -338,7 +338,6 @@ public class Arm implements Subsystem {
     {
         switch (m_currentState){
             case GROUND_ANGLE:
-
 				//4096 ticks in a revolution
 				// configRotate(-20.8);   //-85190/4096
                 configRotateAngle(90);   // TODO: test -90, if it works put -114
@@ -444,11 +443,7 @@ public class Arm implements Subsystem {
     }
 
     public void configRotateAngle(double angle){
-        //4096 ticks
-        //0 position is ARM straight-up
         m_rotate_angle = angle;
-        // m_rotate_position = (Constants.ARM.ROTATEENCODERZEROOFFSET + m_rotate_angle) * 4096 / 360;
-        // using cc_cfg.MagnetSensor.MagnetOffset on CANcoder so no need to correct
         m_rotate_rotations = (m_rotate_angle) / 360;
         configRotate(m_rotate_rotations);
     }

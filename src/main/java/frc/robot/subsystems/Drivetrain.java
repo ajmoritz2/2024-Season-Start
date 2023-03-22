@@ -28,9 +28,9 @@ import frc.robot.utils.maths.oneDimensionalLookup;
 
 public class Drivetrain implements Subsystem {
   
-    public static final double MAX_VOLTAGE = 10.0;
+    public static final double MAX_VOLTAGE = 11.0;
   
-    public static final double MAX_VELOCITY_METERS_PER_SECOND = 10;
+    public static final double MAX_VELOCITY_METERS_PER_SECOND = 5.36;
 
     public static double pitchAngle = 0;
  
@@ -53,6 +53,10 @@ public class Drivetrain implements Subsystem {
         new Translation2d(-Constants.DRIVE.TRACKWIDTH_METERS / 2.0, -Constants.DRIVE.WHEELBASE_METERS / 2.0)
     );
 
+    private final SlewRateLimiter slewX = new SlewRateLimiter(9);
+    private final SlewRateLimiter slewY = new SlewRateLimiter(9);
+    private final SlewRateLimiter slewRot = new SlewRateLimiter(1880);
+
  
     private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
     private double gyroOffset;
@@ -62,14 +66,16 @@ public class Drivetrain implements Subsystem {
         IDLE,   
         MANUAL_CONTROL,
         TRAJECTORY_FOLLOWING,           //X,Y axis speeds relative to field
-        AUTO_BALANCE
+        AUTO_BALANCE,
+        LOCK_ROTATION
     }
 
     public enum WantedState{
         IDLE,
         MANUAL_CONTROL,
         TRAJECTORY_FOLLOWING,
-        AUTO_BALANCE
+        AUTO_BALANCE,
+        LOCK_ROTATION
     }
 
     private static class PeriodicIO {
@@ -170,6 +176,9 @@ public class Drivetrain implements Subsystem {
             case TRAJECTORY_FOLLOWING:
                 newState = handleTrajectoryFollowing();
                 break;
+            case LOCK_ROTATION:
+                newState = handleManualControl();
+                break;
             case IDLE:
                 newState = handleManualControl();
                 break;
@@ -191,9 +200,9 @@ public class Drivetrain implements Subsystem {
         periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-        periodicIO.modifiedJoystickX = -controller.getLeftX()*Math.abs(controller.getLeftX()) * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
-        periodicIO.modifiedJoystickY = -controller.getLeftY()*Math.abs(controller.getLeftY()) * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
-        periodicIO.modifiedJoystickR = -controller.getRightX()*Math.abs(controller.getRightX()) * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND);
+        periodicIO.modifiedJoystickX = slewX.calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+        periodicIO.modifiedJoystickY = slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+        periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND))*0.5;
         
 
         double[] chassisVelocity = chassisSpeedsGetter();
@@ -206,6 +215,7 @@ public class Drivetrain implements Subsystem {
             setWantedState(WantedState.AUTO_BALANCE);
         if(controller.getAButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
+        
         crawling = controller.getRightBumper();
 
         pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
@@ -233,6 +243,10 @@ public class Drivetrain implements Subsystem {
                 moduleStates = autoBalance();
                 //System.out.println("IN balance");
                 break;
+            case LOCK_ROTATION:
+                correctRotation(180);
+                moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRotation(180), !periodicIO.robotOrientedModifier);
+                break;
             case MANUAL_CONTROL:
                 moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
                 break;
@@ -251,6 +265,22 @@ public class Drivetrain implements Subsystem {
     @Override
     public void periodic() {
         
+    }
+
+    private double correctRotation(double goal){
+        double steeringAdjust = 0;
+        double maxJoystickRadians = Math.PI;
+        final double heading_error = getYaw().getRadians()- Math.toRadians(goal);
+        final double Kp = -0.0001;
+        final double min_command = 0.06;
+    
+        if(Math.abs(heading_error)>1.0){
+            if(heading_error<0)
+              steeringAdjust = Kp*heading_error+min_command;
+            else
+              steeringAdjust = Kp*heading_error-min_command;
+        }
+        return Math.min(1,steeringAdjust/maxJoystickRadians);
     }
 
     private double halfWhenCrawl(double val){
@@ -294,6 +324,8 @@ public class Drivetrain implements Subsystem {
             default:
             case MANUAL_CONTROL:
                 return SystemState.MANUAL_CONTROL;
+            case LOCK_ROTATION:
+                return SystemState.LOCK_ROTATION;
 		}
 	}
 
@@ -339,9 +371,12 @@ public class Drivetrain implements Subsystem {
     @Override
     public void outputTelemetry(double timestamp) {
         
-        SmartDashboard.putString("drivetrain/currentState", currentState.toString());
-        SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
-        SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);
+        // SmartDashboard.putString("drivetrain/currentState", currentState.toString());
+        // SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
+        // SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);
+        // SmartDashboard.putNumber("ModifiedX", periodicIO.modifiedJoystickX);
+        // SmartDashboard.putNumber("ModifiedY", periodicIO.modifiedJoystickY);
+        // SmartDashboard.putNumber("ModifiedR", periodicIO.modifiedJoystickR);
         // SmartDashboard.putString("drivetrain/currentStates", currentState.name());
         // SmartDashboard.putNumber("drivetrain/heading",periodicIO.adjustedYaw);
         // SmartDashboard.putString("drivetrain/pose",odometry.getPoseMeters().toString());
