@@ -249,6 +249,8 @@ public class Intake implements Subsystem {
         SmartDashboard.putString("intake Vel", m_intakeMotor.getVelocity().toString());
         SmartDashboard.putBoolean("HaveCube", m_haveCube);
         SmartDashboard.putBoolean("HaveCone", m_haveCone);
+        SmartDashboard.putBoolean("Itk Motor sfty en", m_intakeMotor.isSafetyEnabled());
+        SmartDashboard.putString("Intk Motor Temp", m_intakeMotor.getDeviceTemp().toString());
     }
     @Override
     public void stop() {

@@ -84,20 +84,11 @@ public class Arm implements Subsystem {
 
         TalonFXConfiguration cfg = new TalonFXConfiguration();
         /* Configure current limits */
-        cfg.MotionMagic.MotionMagicCruiseVelocity = 20; // 5 rotations per second cruise
-        cfg.MotionMagic.MotionMagicAcceleration = 40; // Take approximately 0.5 seconds to reach max vel
-        cfg.MotionMagic.MotionMagicJerk = 50;   
-
-		// from Phoenix v5 - kettering
-		// liftMotor.config_kF(0, 0.125);
-		// liftMotor.config_kP(0,2); //0.1
-		// liftMotor.config_kI(0, 0);
-		// liftMotor.config_kD(0, 0);
-        // liftMotor.configPeakOutputForward(0.5);
-		// liftMotor.configPeakOutputReverse(-0.5);
-		// liftMotor.setSensorPhase(true);
-		
-        cfg.Slot0.kP = 20.0F;
+        cfg.MotionMagic.MotionMagicCruiseVelocity = 106; // 5 rotations per second cruise
+        cfg.MotionMagic.MotionMagicAcceleration = 100; // Take approximately 0.5 seconds to reach max vel
+        cfg.MotionMagic.MotionMagicJerk = 0;   
+	
+        cfg.Slot0.kP = 55.0F;
         cfg.Slot0.kI = 0.0F;
         cfg.Slot0.kD = 0.0F;
         cfg.Slot0.kV = 0.0F;
@@ -124,6 +115,7 @@ public class Arm implements Subsystem {
 
         m_extendMotorMMV.OverrideBrakeDurNeutral = true;
         m_extendMotor.setVoltage(0);
+        // m_extendMotor.setSafetyEnabled(false);
 
         zeroExtendSensor();
     }
@@ -137,22 +129,13 @@ public class Arm implements Subsystem {
 
         TalonFXConfiguration cfg = new TalonFXConfiguration();
         /* Configure current limits */
-        cfg.MotionMagic.MotionMagicCruiseVelocity = 5; // 5 rotations per second cruise
-        cfg.MotionMagic.MotionMagicAcceleration = 10; // Take approximately 0.5 seconds to reach max vel
-        cfg.MotionMagic.MotionMagicJerk = 50;   
+        cfg.MotionMagic.MotionMagicCruiseVelocity = 106; // 5 rotations per second cruise
+        cfg.MotionMagic.MotionMagicAcceleration = 100; // Take approximately 0.5 seconds to reach max vel
+        cfg.MotionMagic.MotionMagicJerk = 0;   
 
-		// from Phoenix v5 - kettering
-        // rotateMotorRight.selectProfileSlot(0, 0);
-		// rotateMotorRight.config_kF(0, 0.125);
-		// rotateMotorRight.config_kP(0,2.4); //2.4 5% overshoot
-		// rotateMotorRight.config_kI(0, 0);
-		// rotateMotorRight.config_kD(0, 0);
-		// rotateMotorRight.configPeakOutputForward(0.3);
-        // rotateMotorRight.configPeakOutputReverse(-0.3);
-		// rotateMotorRight.setSensorPhase(true);
 		m_rotateMotor.setInverted(true);
         
-        cfg.Slot0.kP = 2.0F;
+        cfg.Slot0.kP = 55.0F;
         cfg.Slot0.kI = 0.0F;
         cfg.Slot0.kD = 0.0F;
         cfg.Slot0.kV = 0.0F;
@@ -182,6 +165,7 @@ public class Arm implements Subsystem {
 
         m_rotateMotorMMV.OverrideBrakeDurNeutral = true;
         m_rotateMotor.setVoltage(0);
+        // m_rotateMotor.setSafetyEnabled(false);
 
         zeroRotateSensor(); 
     }
@@ -273,8 +257,8 @@ public class Arm implements Subsystem {
            m_rotateMotor.setRotorPosition(1.26);
 
         if (!(m_currentState == SystemState.MANUAL)){
-            if(m_intake.getIntakeCurrent()>=200 && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
-                setWantedState(SystemState.NEUTRAL);
+            // if(m_intake.getIntakeCurrent()>=200 && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
+               // setWantedState(SystemState.NEUTRAL);
 
             if(m_controller.getCrossButtonPressed())
                 setWantedState(SystemState.GROUND_ANGLE);
@@ -299,8 +283,10 @@ public class Arm implements Subsystem {
             
         } else {
             if (m_controller.getOptionsButtonPressed()){
-                // TODO, how to do this with Pro API
-                // m_rotateMotor.setSelectedSensorPosition(0);
+                // TODO, how to do this with Pro API, 
+                // when rotateswitch is tripped, this is the rotate motor position value:
+                m_rotateMotor.setRotorPosition(1.26);
+                m_rotateMotor.setSafetyEnabled(m_manualMode);
             }
         }
 
@@ -322,38 +308,38 @@ public class Arm implements Subsystem {
         switch (m_currentState){
             case GROUND_ANGLE:
 				//4096 ticks in a revolution
-				configRotate(-20.8);   //-85190/4096
+				configRotate(-43.5);  //-20.8);   //-85190/4096
                 // configRotateAngle(-110);
 				configExtend(0);	
                 break;
              case MID:			
-				configRotate(-10.2);  //-42080/4096
+				configRotate(-24.0);  // -10.2);  //-42080/4096
                 // configRotateAngle(-45);   //TODO: tweak angle
-                configExtend(9.75);    //39949/4096
+                configExtend(24.0);    //39949/4096
                 break;
             case HIGH:
-				configRotate(-9.6);   //-39320/4096
+				configRotate(-23.1); // -9.6);   //-39320/4096
                 // configRotate(-.3);   //-39320/4096
                 // configRotateAngle(45);   //TODO: tweak angle
-				configExtend(28.38);     //116256/4096
+				configExtend(61.5);     //116256/4096
                 break;
             case AUTON_MID:
 				// TODO - check this rotate.  shouldn't just be opposite MID ?
-                configRotate(11.2);   //46080/4096
+                configRotate(24.0); // 11.2);   //46080/4096
                 // configRotateAngle(-45);   //TODO: tweak angle
-                configExtend(9.75);    //39949/4096
+                configExtend(24.0);    //39949/4096
                 break;
             case AUTON_HIGH:
 				//TODO - check this rotate.  shouldn't just be opposite HIGH ?
 				configRotate(9.1);    //(41320-4000)/4096
                 // configRotateAngle(-45);   //TODO: tweak angle
-				configExtend(27.41);     //112256/4096
+				configExtend(62.5);  //27.41);     //112256/4096
                 break;
             case MANUAL:
                 manualControl(m_controller.getLeftX(), -m_controller.getRightY());
                 break;
             case HUMAN_FOLD:
-				configRotate(-10.1);   //-41320/4096
+				configRotate(-20.0); // -10.1);   //-41320/4096
                 // configRotateAngle(40);   //TODO: tweak angle
                 configExtend(0);
                 break;
@@ -402,7 +388,9 @@ public class Arm implements Subsystem {
         // SmartDashboard.putNumber("rotate angle commanded", m_rotate_angle);
         SmartDashboard.putNumber("rotate rotations commanded", m_rotate_rotations);
         SmartDashboard.putBoolean("Manual Mode", m_manualMode);
-        SmartDashboard.putString("rotate encoder pos", m_rotateEncoder.getPosition().toString());
+        // SmartDashboard.putString("rotate encoder pos", m_rotateEncoder.getPosition().toString());
+        SmartDashboard.putBoolean("Rot Motor sfty en", m_rotateMotor.isSafetyEnabled());
+        SmartDashboard.putBoolean("Ext Motor sfty en", m_extendMotor.isSafetyEnabled());
     }
 
     private SystemState handleManual(){
@@ -447,7 +435,7 @@ public class Arm implements Subsystem {
 
     public void zeroRotateSensor(){
         m_rotateMotor.setRotorPosition(0);
-        m_rotateEncoder.setPosition(0);
+        // m_rotateEncoder.setPosition(0);
         //move arm to vertical '0' position
         // configRotateAngle(0);
         //  No need to zero.   absolute CAN coder position will be used.
