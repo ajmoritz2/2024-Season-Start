@@ -1,14 +1,10 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenixpro.StatusCode;
-import com.ctre.phoenixpro.configs.TalonFXConfiguration;
-import com.ctre.phoenixpro.hardware.TalonFX;
-// import com.ctre.phoenixpro.StatusSignalValue;
-// import com.ctre.phoenixpro.controls.NeutralOut;
-// import com.ctre.phoenixpro.controls.VelocityVoltage;
-import com.ctre.phoenixpro.controls.StaticBrake;
-import com.ctre.phoenixpro.controls.VoltageOut;
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -17,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
 
 public class Intake implements Subsystem {
+
 
     public enum SystemState{
         IDLE,
@@ -34,87 +31,37 @@ public class Intake implements Subsystem {
         PLACING
     }
 
-    private SystemState m_currentState = SystemState.IDLE;
-    private WantedState m_wantedState = WantedState.IDLE;
+    private SystemState currentState = SystemState.IDLE;
+    private WantedState wantedState = WantedState.IDLE;
 
-    private boolean m_haveCube;
-    private boolean m_haveCone;
+    private boolean haveCube;
+    private boolean haveCone;
 
-    private double m_currentStateStartTime = 0;
+    private double currentStateStartTime = 0;
 
-    protected TalonFX m_intakeMotor;
+    private TalonFX intakeMotor;
 
-    protected VoltageOut m_voltageOut;
+    private final PS4Controller controller;
 
-    private final PS4Controller m_controller;
 
     public Intake(PS4Controller controller){
-        m_controller = controller;
+        intakeMotor = new TalonFX(Constants.INTAKE.INTAKE_MOTOR, "MANIPbus");
 
-        intakeMotorInit();
+        
+        intakeMotor.configPeakOutputForward(1);
+        intakeMotor.configPeakOutputReverse(-1);
+        intakeMotor.setNeutralMode(NeutralMode.Brake); 
+        haveCone = false;
+        haveCube = false;
 
-        m_haveCone = false;
-        m_haveCube = false;
-    }
-
-    //0, 13
-    private void intakeMotorInit(){
-        m_intakeMotor = new TalonFX(Constants.INTAKE.INTAKE_MOTOR, "MANIPbus");
-
-        TalonFXConfiguration cfg = new TalonFXConfiguration();
-
-        //1c
-        cfg.Slot0.kP = 0.0F;
-        cfg.Slot0.kI = 0.0F;
-        cfg.Slot0.kD = 0.0F;
-        cfg.Slot0.kV = 0.0F;
-        // cfg.Slot0.kS = 0.25F; // Approximately 0.25V to get the mechanism moving
-   
-        /* Voltage-based velocity requires a feed forward to account for the back-emf of the motor */
-        // cfg.Slot0.kP = 0.11; // An error of 1 rotation per second results in 2V output
-        // cfg.Slot0.kI = 0.5; // An error of 1 rotation per second increases output by 0.5V every second
-        // cfg.Slot0.kD = 0.0001; // A change of 1 rotation per second squared results in 0.01 volts output
-        // cfg.Slot0.kV = 0.12; // Falcon 500 is a 500kV motor, 500rpm per V = 8.333 rps per V, 1/8.33 = 0.12 volts / Rotation per second
-        // Peak output of 8 volts
-
-
-   		cfg.Voltage.PeakForwardVoltage = 11;    
-        cfg.Voltage.PeakReverseVoltage = -11;
-
-        // /* Torque-based velocity does not require a feed forward, as torque will accelerate the rotor up to the desired velocity by itself */
-        // cfg.Slot1.kP = 5; // An error of 1 rotation per second results in 5 amps output
-        // cfg.Slot1.kI = 0.1; // An error of 1 rotation per second increases output by 0.1 amps every second
-        // cfg.Slot1.kD = 0.001; // A change of 1000 rotation per second squared results in 1 amp output
-
-        //1e
-        // Peak output of 40 amps
-        // cfg.TorqueCurrent.PeakForwardTorqueCurrent = 40;
-        // cfg.TorqueCurrent.PeakReverseTorqueCurrent = -40;
- 
-        // TODO:  limit we are looking for is 100Amps and 200Amps?   That is really hight!
-        // Max is +/- 347Amps.  we were not setting a max in ManualMerge.
-        // cfg.CurrentLimits.SupplyCurrentLimitEnable = true;
-        // cfg.CurrentLimits.SupplyCurrentLimit = 15.0;
-        //m_intakeMotor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true,10,15,0.5));
-
-        StatusCode status = StatusCode.StatusCodeNotInitialized;
-        for(int i = 0; i < 5; ++i) {
-          status = m_intakeMotor.getConfigurator().apply(cfg);
-          if (status.isOK()) break;
-        }
-        if (!status.isOK()) {
-          System.out.println("Could not configure extend motor. Error: " + status.toString());
-        }
-
-        m_voltageOut = new VoltageOut(0).withOverrideBrakeDurNeutral(true);
-
-        setIntakeSpeed(0);
+        this.controller = controller;
     }
 
     @Override
     public void processLoop(double timestamp) {
+        // TODO Auto-generated method stub
         SystemState newState;
-        switch (m_currentState){
+        switch (currentState){
             default:
             case INTAKING_CONE:
                 newState = handleManual();
@@ -133,64 +80,54 @@ public class Intake implements Subsystem {
                 break;
 
         }
-        if (newState != m_currentState) {
-			m_currentState = newState;
-			m_currentStateStartTime = timestamp;
+        if (newState != currentState) {
+			currentState = newState;
+			currentStateStartTime = timestamp;
 		}
     }
 
     @Override
     public void readPeriodicInputs(double timestamp){
-        if (m_controller.getL1ButtonPressed()){
-            m_wantedState =  WantedState.INTAKING_CONE;
-            System.out.println("L1 pressed - intake - intaking CONE state");
-        }
-        if (m_controller.getL1ButtonReleased()){
-            m_wantedState = WantedState.IDLE;
-            System.out.println("L1 released - intake - idle state");
-        }
-        if (m_controller.getL2ButtonPressed()){
-            m_wantedState = WantedState.INTAKING_CUBE;
-            System.out.println("L2 pressed - intake - intaking CUBE state");
-        }  
-        if (m_controller.getL2ButtonReleased()){
-            m_wantedState = WantedState.IDLE;
-            System.out.println("L2 released - intake - idle state");
-        }  
-        if (m_currentState == SystemState.INTAKING_CONE && getIntakeCurrent() > 200){
-            System.out.println("intake cone - stall current 200 reached - have CONE");
+        if (controller.getL1ButtonPressed())
+            wantedState =  WantedState.INTAKING_CONE;
+        if (controller.getL1ButtonReleased())
+            wantedState = WantedState.IDLE;
+
+        if (controller.getL2ButtonPressed())
+            wantedState = WantedState.INTAKING_CUBE;
+        if (controller.getL2ButtonReleased())
+            wantedState = WantedState.IDLE;
+
+        if (currentState == SystemState.INTAKING_CONE && getIntakeCurrent() > 200){
             new SequentialCommandGroup(
                 new WaitCommand(5),
                 new InstantCommand(()-> setWantedState(WantedState.IDLE))
             );
-            m_haveCone = true;
+            haveCone = true;
         }
-        if (m_currentState == SystemState.INTAKING_CUBE && getIntakeCurrent() > 100){
-            System.out.println("intake cube - stall current 100 reached - have CUBE");
+        if (currentState == SystemState.INTAKING_CUBE && getIntakeCurrent() > 100){
             new SequentialCommandGroup(
                 new WaitCommand(5),
                 new InstantCommand(()-> setWantedState(WantedState.IDLE_CUBE))
             );
-            m_haveCube = true;
+            haveCube = true;
         }
      
-        if (m_controller.getR2ButtonPressed()){
-            m_wantedState = WantedState.PLACING;
-            m_haveCone = false;
-            m_haveCube = false;
-            System.out.println("R2 Pressed - intake - placing state");
+        if (controller.getR2ButtonPressed()){
+            wantedState = WantedState.PLACING;
+            haveCone = false;
+            haveCube = false;
         }
             
-        if (m_controller.getR2ButtonReleased()){
-            m_wantedState = WantedState.IDLE;
-            System.out.println("R2 Released - intake - idle state");
-        }
+        if (controller.getR2ButtonReleased())
+            wantedState = WantedState.IDLE;
+
 
     }
 
     @Override
     public void writePeriodicOutputs(double timestamp){
-        switch(m_currentState){
+        switch(currentState){
 
             case INTAKING_CONE:
                 setIntakeSpeed(-1);
@@ -211,8 +148,9 @@ public class Intake implements Subsystem {
         }
     }
 
+
     private SystemState handleManual(){
-        switch (m_wantedState){
+        switch (wantedState){
             case INTAKING_CONE:
                 return SystemState.INTAKING_CONE;
             case INTAKING_CUBE:
@@ -227,57 +165,49 @@ public class Intake implements Subsystem {
 		}
     }
 
-    public void setIntakeSpeed(double percent){
-        double outVolts = percent * Constants.INTAKE.MAX_SUPPLY_VOLTAGE;
-        m_intakeMotor.setControl(m_voltageOut.withOutput(outVolts));
+    public void setIntakeSpeed(double speed){
+        intakeMotor.set(ControlMode.PercentOutput, speed);
     }
-
     public double getIntakeCurrent(){
-        return m_intakeMotor.getStatorCurrent().getValue();
+        return intakeMotor.getStatorCurrent();
     }
-    public double getSupplyCurrent(){
-        return m_intakeMotor.getSupplyCurrent().getValue();
-    }
-
     @Override
     public void outputTelemetry(double timestamp){
-        SmartDashboard.putString("intake state", m_currentState.toString());
-        SmartDashboard.putNumber("intake Stator Current", getIntakeCurrent());
-        SmartDashboard.putNumber("intake Supply Current", getSupplyCurrent());
-        SmartDashboard.putString("intake volts", m_intakeMotor.getSupplyVoltage().toString());
-        SmartDashboard.putString("intake Pos", m_intakeMotor.getPosition().toString());
-        SmartDashboard.putString("intake Vel", m_intakeMotor.getVelocity().toString());
-        SmartDashboard.putBoolean("HaveCube", m_haveCube);
-        SmartDashboard.putBoolean("HaveCone", m_haveCone);
-        SmartDashboard.putBoolean("Itk Motor sfty en", m_intakeMotor.isSafetyEnabled());
-        SmartDashboard.putString("Intk Motor Temp", m_intakeMotor.getDeviceTemp().toString());
+        SmartDashboard.putNumber("Current Stator Current", getIntakeCurrent());
+        SmartDashboard.putNumber("Supply Current", intakeMotor.getSupplyCurrent());
+        SmartDashboard.putBoolean("HaveCube", haveCube);
+        SmartDashboard.putBoolean("HaveCone", haveCone);
     }
     @Override
     public void stop() {
-        setIntakeSpeed(0);
+        // TODO Auto-generated method stub
+
     }
 
     @Override
     public boolean checkSystem() {
+        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public void zeroSensors() {
         // TODO Auto-generated method stub
+
     }
 
     @Override
     public String getId() {
+        // TODO Auto-generated method stub
         return "Intake";
     }
 
     public void setWantedState(WantedState wantedState) {
-		m_wantedState = wantedState;
+		this.wantedState = wantedState;
 	}
 
     public SystemState getCurrentState(){
-        return m_currentState;
+        return currentState;
     }
 
 }
