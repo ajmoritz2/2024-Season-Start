@@ -33,6 +33,7 @@ public class Drivetrain implements Subsystem {
     public static final double MAX_VELOCITY_METERS_PER_SECOND = 5.36;
 
     public static double pitchAngle = 0;
+
  
     public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = Constants.DRIVE.MAX_ROTATE_SPEED_RAD_PER_SEC_EST;
 
