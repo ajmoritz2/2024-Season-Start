@@ -216,7 +216,7 @@ public class Drivetrain implements Subsystem {
         if(controller.getAButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
         
-        crawling = controller.getRightBumper();
+        crawling = false;
 
         pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
 
@@ -225,6 +225,12 @@ public class Drivetrain implements Subsystem {
             balancedX = false;
         } else if (!balancedX && Math.abs(pitchAngle) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
             balancedX = true;
+        }
+
+        if (controller.getRightBumper()){
+            setWantedState(WantedState.LOCK_ROTATION);
+        } else if (currentState == SystemState.LOCK_ROTATION){
+            setWantedState(WantedState.MANUAL_CONTROL);
         }
 
     }
@@ -274,13 +280,15 @@ public class Drivetrain implements Subsystem {
         final double Kp = -0.0001;
         final double min_command = 0.06;
     
-        if(Math.abs(heading_error)>1.0){
-            if(heading_error<0)
-              steeringAdjust = Kp*heading_error+min_command;
+        if(Math.abs(heading_error)>0.1){
+            if(heading_error<Math.PI)
+              steeringAdjust = -1;
             else
-              steeringAdjust = Kp*heading_error-min_command;
+              steeringAdjust = 1;
+        } else {
+            steeringAdjust = 0;
         }
-        return Math.min(1,steeringAdjust/maxJoystickRadians);
+        return steeringAdjust;
     }
 
     private double halfWhenCrawl(double val){
