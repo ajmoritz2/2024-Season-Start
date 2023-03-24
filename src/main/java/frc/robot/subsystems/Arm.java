@@ -86,7 +86,7 @@ public class Arm implements Subsystem {
         /* Configure current limits */
         cfg.MotionMagic.MotionMagicCruiseVelocity = 80; //106; // 5 rotations per second cruise
         cfg.MotionMagic.MotionMagicAcceleration = 100; // Take approximately 0.5 seconds to reach max vel
-        cfg.MotionMagic.MotionMagicJerk = 0;   
+        cfg.MotionMagic.MotionMagicJerk = 700;   
 	
         cfg.Slot0.kP = 55.0F;
         cfg.Slot0.kI = 0.0F;
@@ -137,7 +137,7 @@ public class Arm implements Subsystem {
         /* Configure current limits */
         cfg.MotionMagic.MotionMagicCruiseVelocity = 80; //106; // 5 rotations per second cruise
         cfg.MotionMagic.MotionMagicAcceleration = 100; // Take approximately 0.5 seconds to reach max vel
-        cfg.MotionMagic.MotionMagicJerk = 0;   
+        cfg.MotionMagic.MotionMagicJerk = 700;   
 
 		m_rotateMotor.setInverted(true);
         
@@ -332,7 +332,7 @@ public class Arm implements Subsystem {
 				configExtend(57.0);  //61.5);     //116256/4096
                 break;
             case AUTON_MID:
-	            configRotate(24.0); // 11.2);   //46080/4096
+	            configRotate(19.0); // 11.2);   //46080/4096
                 // configRotateAngle(-45);   //TODO: tweak angle
                 configExtend(24.0);    //39949/4096
                 break;

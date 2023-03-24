@@ -53,8 +53,8 @@ public class Drivetrain implements Subsystem {
         new Translation2d(-Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0)
     );
 
-    private final SlewRateLimiter slewX = new SlewRateLimiter(9);
-    private final SlewRateLimiter slewY = new SlewRateLimiter(9);
+    private final SlewRateLimiter slewX = new SlewRateLimiter(18);
+    private final SlewRateLimiter slewY = new SlewRateLimiter(18);
     private final SlewRateLimiter slewRot = new SlewRateLimiter(1880);
 
  
@@ -202,7 +202,7 @@ public class Drivetrain implements Subsystem {
 
         periodicIO.modifiedJoystickX = slewX.calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
         periodicIO.modifiedJoystickY = slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
-        periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND))*0.5;
+        periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND))*0.75;
         
 
         double[] chassisVelocity = chassisSpeedsGetter();
