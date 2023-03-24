@@ -28,7 +28,7 @@ public class Autons {
     
     private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("center", new PathConstraints(2.5, 2));
 
-    private static List<PathPlannerTrajectory> clear = PathPlanner.loadPathGroup("New Clear", new PathConstraints(2.5, 1.75));
+    private static List<PathPlannerTrajectory> clear = PathPlanner.loadPathGroup("New Clear", new PathConstraints(2.5, 1.75), new PathConstraints(2.5,1.75));
 
     private static List<PathPlannerTrajectory> wireCover = PathPlanner.loadPathGroup("WireCover", new PathConstraints(2.5, 3));
     
@@ -71,7 +71,7 @@ public class Autons {
                 // new WaitCommand(1),
                 new InstantCommand(()-> driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING)),
                 fullAuto[0],
-                new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE))
+                fullAuto[1]
             );
     }
 
