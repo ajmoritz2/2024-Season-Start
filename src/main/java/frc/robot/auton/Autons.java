@@ -28,7 +28,7 @@ public class Autons {
     
     private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("center", new PathConstraints(2.5, 2));
 
-    private static List<PathPlannerTrajectory> clear = PathPlanner.loadPathGroup("New Clear", new PathConstraints(2.5, 1.75), new PathConstraints(2.5,1.75));
+    private static List<PathPlannerTrajectory> clear = PathPlanner.loadPathGroup("New Clear", new PathConstraints(2.5, 1.75), new PathConstraints(2.5,1.75), new PathConstraints(2.5,1.75));
 
     private static List<PathPlannerTrajectory> wireCover = PathPlanner.loadPathGroup("WireCover", new PathConstraints(2.5, 3));
     
@@ -60,18 +60,26 @@ public class Autons {
         
         Command[] fullAuto = TheoryPath.getPathLegs(clear, driveTrain);
         
+        
             
         return new SequentialCommandGroup(
-                // new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
-                // new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                // new WaitCommand(1.2),
-                // new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
-                // new WaitCommand(1),
-                // new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
-                // new WaitCommand(1),
+                new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
+                new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
+                new WaitCommand(1.2),
+                new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
+                new WaitCommand(1),
+                new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
+                new WaitCommand(1),
                 new InstantCommand(()-> driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING)),
-                fullAuto[0],
-                fullAuto[1]
+                new ParallelCommandGroup(fullAuto[0], new SequentialCommandGroup(new ArmWantedStateCommand(arm, SystemState.GROUND_ANGLE),new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.INTAKING_CUBE),new WaitCommand(3.5),new ArmWantedStateCommand(arm, SystemState.NEUTRAL))),
+                fullAuto[1],
+                new ArmWantedStateCommand(arm, SystemState.AUTON_HIGH),
+                new WaitCommand(1),
+                new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
+                new WaitCommand(1),
+                new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
+                fullAuto[2],
+                new ArmWantedStateCommand(arm, SystemState.GROUND_ANGLE)
             );
     }
 

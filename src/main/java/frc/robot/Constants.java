@@ -91,7 +91,7 @@ public final class Constants {
         public static final double maxAngularVelocity = 10.0; //TODO: This must be tuned to specific robot
 
         /* Neutral Modes */
-        public static final NeutralMode angleNeutralMode = NeutralMode.Coast;
+        public static final NeutralMode angleNeutralMode = NeutralMode.Brake;
         public static final NeutralMode driveNeutralMode = NeutralMode.Brake;
 
         /* Module Specific Constants */
@@ -177,7 +177,7 @@ public final class Constants {
         );
 
         public static final int MAX_FWD_REV_SPEED_MPS_EST = 10;
-        public static final int MAX_ROTATE_SPEED_RAD_PER_SEC_EST = 5;
+        public static final int MAX_ROTATE_SPEED_RAD_PER_SEC_EST = 10;
         static public final double MAX_FWD_REV_SPEED_FAST = 0.5; // Percent of output power
         static public final double MAX_STRAFE_SPEED_FAST = 0.5;
         static public final double MAX_ROTATE_SPEED_FAST = 0.35;

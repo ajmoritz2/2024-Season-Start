@@ -15,9 +15,16 @@ public class TheoryPath extends CommandBase{
 
     public static PathPlannerCommand[] getPathLegs(List<PathPlannerTrajectory> paths, Drivetrain drivetrain){
         List<PathPlannerCommand> legs = new ArrayList<PathPlannerCommand>();
+        int i = 0;
         
         for (PathPlannerTrajectory path : paths){
-            legs.add(new PathPlannerCommand(path, drivetrain));
+            if (i == 0){
+                legs.add(new PathPlannerCommand(path, drivetrain, true));
+                i++;
+            } else 
+                legs.add(new PathPlannerCommand(path, drivetrain, false));
+            
+
         }
 
         return legs.toArray(PathPlannerCommand[]::new);

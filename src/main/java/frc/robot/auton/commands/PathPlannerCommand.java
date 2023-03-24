@@ -21,7 +21,7 @@ public class PathPlannerCommand extends SwerveControllerCommand {
     private static final double translateKp = 12;
     private static final double translateKi = 0;
     private static final double translateKd = 0;
-    private static final double rotateKp = 0.30;
+    private static final double rotateKp = 1; //.3
     private static final double rotateKi = 0;
     private static final double rotateKd = 0;
 

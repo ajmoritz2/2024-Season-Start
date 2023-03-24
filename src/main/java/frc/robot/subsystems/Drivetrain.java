@@ -44,13 +44,13 @@ public class Drivetrain implements Subsystem {
 
     private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
         // Front left
-        new Translation2d(Constants.DRIVE.TRACKWIDTH_METERS / 2.0, Constants.DRIVE.WHEELBASE_METERS / 2.0),
+        new Translation2d(Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
         // Front right
-        new Translation2d(Constants.DRIVE.TRACKWIDTH_METERS / 2.0, -Constants.DRIVE.WHEELBASE_METERS / 2.0),
+        new Translation2d(Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0),
         // Back left
-        new Translation2d(-Constants.DRIVE.TRACKWIDTH_METERS / 2.0, Constants.DRIVE.WHEELBASE_METERS / 2.0),
+        new Translation2d(-Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
         // Back right
-        new Translation2d(-Constants.DRIVE.TRACKWIDTH_METERS / 2.0, -Constants.DRIVE.WHEELBASE_METERS / 2.0)
+        new Translation2d(-Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0)
     );
 
     private final SlewRateLimiter slewX = new SlewRateLimiter(9);
