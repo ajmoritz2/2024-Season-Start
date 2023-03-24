@@ -33,7 +33,7 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
     m_robotContainer.startSubsystemThreads();
 
-    for (String key : SmartDashboard.getKeys()){
+    for (String key : SmartDashboard.getKeys()){ // Get rid of unused/ commented out keys hopefully.
       SmartDashboard.clearPersistent(key);
     }
 
@@ -54,6 +54,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_robotContainer.enableState = RobotContainer.EnableState.AUTON;
+    m_robotContainer.drivetrain.resetOdometry();
 
 		autonomousCommand = m_robotContainer.getAutonChooser().getSelected();
 
@@ -80,7 +81,13 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    // TODO: Test to see if these break/make the robot better
+    m_robotContainer.enableState = RobotContainer.EnableState.DISABLED;
+    m_robotContainer.drivetrain.setWantedState(Drivetrain.WantedState.IDLE);
+    m_robotContainer.stopSubsystems();
+
+  }
 
   @Override
   public void disabledPeriodic() {}

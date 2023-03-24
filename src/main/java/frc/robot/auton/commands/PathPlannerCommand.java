@@ -1,36 +1,31 @@
 package frc.robot.auton.commands;
 
+import com.pathplanner.lib.PathPlannerTrajectory;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
-import com.pathplanner.lib.PathPlannerTrajectory;
-import com.pathplanner.lib.commands.PPSwerveControllerCommand;
+import frc.robot.Constants;
 import frc.robot.subsystems.Drivetrain;
 //import frc.robot.subsystems.SwerveDrivetrain;
 
 
-public class PathPlannerCommand extends PPSwerveControllerCommand {
+public class PathPlannerCommand extends SwerveControllerCommand {
   /** Creates a new PathPlannerSwerveTrajectoryCommand. */
   private PathPlannerTrajectory trajectory;
   private Drivetrain drivetrain;
   private final boolean resetOdometry;
 
     //TODO: relocate to constants file
-    private static final double translateKp = .5;
+    private static final double translateKp = 12;
     private static final double translateKi = 0;
     private static final double translateKd = 0;
-    private static final double rotateKp = .6;
+    private static final double rotateKp = 0.30;
     private static final double rotateKi = 0;
     private static final double rotateKd = 0;
 
-  private static ProfiledPIDController thetaController =  new ProfiledPIDController(rotateKp, rotateKi, rotateKd, new TrapezoidProfile.Constraints(
-    Units.degreesToRadians(3600), //max angular velocity
-    Units.degreesToRadians(10800) //max angular acceleration
-  ));
+  private static ProfiledPIDController thetaController =  new ProfiledPIDController(rotateKp, rotateKi, rotateKd, Constants.AutoConstants.kThetaControllerConstraints);
 
   public PathPlannerCommand(PathPlannerTrajectory trajectory, Drivetrain drivetrain){
       this(trajectory, drivetrain, true);
@@ -44,7 +39,7 @@ public class PathPlannerCommand extends PPSwerveControllerCommand {
         drivetrain.getKinematics(),
         new PIDController(translateKp, translateKi, translateKd),
         new PIDController(translateKp, translateKi, translateKd),
-        new PIDController(rotateKp, rotateKi, rotateKd),
+        thetaController,
         drivetrain::setModuleStatesFromTrajectory, 
         drivetrain);
     
