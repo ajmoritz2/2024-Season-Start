@@ -18,6 +18,9 @@ import com.ctre.phoenixpro.hardware.CANcoder;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 //import edu.wpi.first.wpilibj2.command.InstantCommand;
 //import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 //import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -277,14 +280,20 @@ public class Arm implements Subsystem {
             if(m_controller.getCircleButtonPressed())
                 setWantedState(SystemState.MID);
 
-            if(m_controller.getTriangleButtonPressed())
-                setWantedState(SystemState.NEUTRAL);
+            if(m_controller.getTriangleButtonPressed()){
+                if (m_currentState == SystemState.HIGH)
+                    new SequentialCommandGroup(new InstantCommand(() -> setWantedState(SystemState.MID)),
+                        new WaitCommand(0.5),
+                        new InstantCommand(() -> setWantedState(SystemState.NEUTRAL))).schedule();
+                else
+                    setWantedState(SystemState.NEUTRAL);
+            }
 
             if(m_controller.getSquareButtonPressed())
                 setWantedState(SystemState.HIGH);
 
             if(m_controller.getR1ButtonPressed())
-                setWantedState(SystemState.AUTON_HIGH); // hUMAN fOLD
+                setWantedState(SystemState.HUMAN_FOLD); // hUMAN fOLD
             if(m_controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
             if (m_controller.getOptionsButtonPressed())
@@ -345,7 +354,7 @@ public class Arm implements Subsystem {
                 manualControl(m_controller.getLeftX(), -m_controller.getRightY());
                 break;
             case HUMAN_FOLD:
-				configRotate(-20.0); // -10.1);   //-41320/4096
+				configRotate(-26.0); // -10.1);   //-41320/4096
                 // configRotateAngle(40);   //TODO: tweak angle
                 configExtend(0);
                 break;

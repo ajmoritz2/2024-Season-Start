@@ -33,6 +33,7 @@ public class Intake implements Subsystem {
 
     private SystemState currentState = SystemState.IDLE;
     private WantedState wantedState = WantedState.IDLE;
+    
 
     private boolean haveCube;
     private boolean haveCone;

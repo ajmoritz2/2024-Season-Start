@@ -34,6 +34,7 @@ public class Drivetrain implements Subsystem {
 
     public static double pitchAngle = 0;
 
+    private double lockDir = 0;
  
     public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = Constants.DRIVE.MAX_ROTATE_SPEED_RAD_PER_SEC_EST;
 
@@ -230,7 +231,12 @@ public class Drivetrain implements Subsystem {
 
         if (controller.getRightBumper()){
             setWantedState(WantedState.LOCK_ROTATION);
-        } else if (currentState == SystemState.LOCK_ROTATION){
+            lockDir = 180+360;
+        } else if (controller.getLeftBumper()){
+            setWantedState(WantedState.LOCK_ROTATION);
+            lockDir = 360;
+
+        }else if (currentState == SystemState.LOCK_ROTATION){
             setWantedState(WantedState.MANUAL_CONTROL);
         }
 
@@ -251,8 +257,7 @@ public class Drivetrain implements Subsystem {
                 //System.out.println("IN balance");
                 break;
             case LOCK_ROTATION:
-                correctRotation(180);
-                moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRotation(180), !periodicIO.robotOrientedModifier);
+                moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRotation(lockDir), !periodicIO.robotOrientedModifier);
                 break;
             case MANUAL_CONTROL:
                 moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
@@ -277,19 +282,19 @@ public class Drivetrain implements Subsystem {
     private double correctRotation(double goal){
         double steeringAdjust = 0;
         double maxJoystickRadians = Math.PI;
-        final double heading_error = getYaw().getRadians()- Math.toRadians(goal);
+        final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
         final double Kp = -0.0001;
         final double min_command = 0.06;
     
-        if(Math.abs(heading_error)>0.1){
-            if(heading_error<Math.PI)
-              steeringAdjust = -1;
-            else
+        if(Math.abs(heading_error)>0.2){
+            if(heading_error<0)
               steeringAdjust = 1;
+            else
+              steeringAdjust = -1;
         } else {
             steeringAdjust = 0;
         }
-        return steeringAdjust;
+        return steeringAdjust*2;
     }
 
     private double halfWhenCrawl(double val){
@@ -409,7 +414,13 @@ public class Drivetrain implements Subsystem {
         
         // SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
         // SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
-        SmartDashboard.putNumber("PITCH", pitchAngle);
+         double heading_error = getYaw().getRadians()- Math.toRadians(lockDir);
+
+        SmartDashboard.putNumber("headingangle", heading_error);
+        SmartDashboard.putNumber("Yaw", getYaw().getRadians());
+        SmartDashboard.putNumber("Goal Angle", lockDir);
+
+
         for(SwerveModule mod : mSwerveMods){
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
