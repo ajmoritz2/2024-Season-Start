@@ -3,7 +3,7 @@ package frc.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.SPI;
-
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -34,7 +34,8 @@ public class Drivetrain implements Subsystem {
 
     public static double pitchAngle = 0;
 
-    private double lockDir = 0;
+    private double lockDir = 180;
+    private boolean lockButton = false; // False is Lbumper True is RBumper
  
     public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = Constants.DRIVE.MAX_ROTATE_SPEED_RAD_PER_SEC_EST;
 
@@ -231,11 +232,12 @@ public class Drivetrain implements Subsystem {
 
         if (controller.getRightBumper()){
             setWantedState(WantedState.LOCK_ROTATION);
-            lockDir = 180+360;
+            lockDir = 180;
+            lockButton = true;
         } else if (controller.getLeftBumper()){
             setWantedState(WantedState.LOCK_ROTATION);
             lockDir = 360;
-
+            lockButton = false;
         }else if (currentState == SystemState.LOCK_ROTATION){
             setWantedState(WantedState.MANUAL_CONTROL);
         }
@@ -257,7 +259,11 @@ public class Drivetrain implements Subsystem {
                 //System.out.println("IN balance");
                 break;
             case LOCK_ROTATION:
-                moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRotation(lockDir), !periodicIO.robotOrientedModifier);
+                if(lockButton)
+                    moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRightRotation(lockDir), !periodicIO.robotOrientedModifier);
+                else
+                    moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctLeftRotation(lockDir), !periodicIO.robotOrientedModifier);
+
                 break;
             case MANUAL_CONTROL:
                 moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
@@ -279,14 +285,32 @@ public class Drivetrain implements Subsystem {
         
     }
 
-    private double correctRotation(double goal){
+    private double correctRightRotation(double goal){
         double steeringAdjust = 0;
         double maxJoystickRadians = Math.PI;
         final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
         final double Kp = -0.0001;
         final double min_command = 0.06;
     
-        if(Math.abs(heading_error)>0.2){
+        if(Math.abs(heading_error)>0.1){
+            if(heading_error>Math.PI)
+              steeringAdjust = 1;
+            else
+              steeringAdjust = -1;
+        } else {
+            steeringAdjust = 0;
+        }
+        return steeringAdjust*2;
+    }
+
+    private double correctLeftRotation(double goal){
+        double steeringAdjust = 0;
+        double maxJoystickRadians = Math.PI;
+        final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
+        final double Kp = -0.0001;
+        final double min_command = 0.06;
+    
+        if(Math.abs(heading_error)>0.1){
             if(heading_error<0)
               steeringAdjust = 1;
             else
@@ -540,6 +564,7 @@ public class Drivetrain implements Subsystem {
           }
        //
        //    // We have to invert the angle of the NavX so that rotating the robot counter-clockwise makes the angle increase.
+       
           return Rotation2d.fromDegrees(360.0 - ahrs.getYaw());
     }
 

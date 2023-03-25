@@ -354,13 +354,13 @@ public class Arm implements Subsystem {
                 manualControl(m_controller.getLeftX(), -m_controller.getRightY());
                 break;
             case HUMAN_FOLD:
-				configRotate(-26.0); // -10.1);   //-41320/4096
+				configRotate(-24.0); // -10.1);   //-41320/4096
                 // configRotateAngle(40);   //TODO: tweak angle
                 configExtend(0);
                 break;
             case ZERO:
 				//TODO how does this work? 
-                configRotate(-17.0);   //70057/4096
+                configRotate(24.0);   //70057/4096
                 // configRotateAngle(-45.10);
                 configExtend(0);
                 break;
