@@ -343,7 +343,7 @@ public class Drivetrain implements Subsystem {
         if (!balancedX && pitchAngle < 0) {
 
             double pitchAngleRadians = pitchAngle * (Math.PI / 180.0);
-            xAxisRate =  Math.min(4, Math.abs(Math.sin(pitchAngleRadians))*-0.2);
+            xAxisRate =  Math.min(4, Math.abs(Math.sin(pitchAngleRadians))*-0.3);
         }
 
         return drive(xAxisRate*Constants.BALANCEDMAXSPEED, 0, 0.0, true);

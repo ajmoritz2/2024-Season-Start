@@ -99,7 +99,7 @@ public class RobotContainer {
 		//autonChooser.setDefaultOption("Do Nothing", new InstantCommand(() -> System.out.println("Doing nothing...")));
 		autonChooser.addOption("center", Autons.center(drivetrain,arm,intake));
 		autonChooser.addOption("clearBlue", Autons.clearBlue(drivetrain, arm, intake));
-		autonChooser.addOption("clearRed", Autons.clearBlue(drivetrain, arm, intake));
+		autonChooser.addOption("clearRed", Autons.clearRed(drivetrain, arm, intake));
 		autonChooser.addOption("wireCover", Autons.wireCover(drivetrain, arm, intake));
 		autonChooser.addOption("EMERGENCY USE ONLY!!: NOTHING", Autons.emergencyDonNothing(drivetrain));
 		SmartDashboard.putData("auton/chooser",autonChooser);

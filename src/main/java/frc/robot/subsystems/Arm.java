@@ -39,6 +39,7 @@ public class Arm implements Subsystem {
         TRAVEL,
         AUTON_MID,
         AUTON_HIGH,
+        TRANSITION,
         MANUAL
     }
 
@@ -237,6 +238,9 @@ public class Arm implements Subsystem {
              case HIGH:
                 newState = handleManual();
                 break;
+            case TRANSITION:
+                newState = handleManual();
+                break;
             case AUTON_MID:
                 newState = handleManual();
                 break;
@@ -265,7 +269,7 @@ public class Arm implements Subsystem {
            //  also should we be doing this every loop? and every time passed?
            //  does this mess-up motion magic?
            //  maybe should be only in manual mode?
-           m_rotateMotor.setRotorPosition(1.26);
+           m_rotateMotor.setRotorPosition(2.6);
         }
 
         if (!(m_currentState == SystemState.MANUAL)){
@@ -282,7 +286,7 @@ public class Arm implements Subsystem {
 
             if(m_controller.getTriangleButtonPressed()){
                 if (m_currentState == SystemState.HIGH)
-                    new SequentialCommandGroup(new InstantCommand(() -> setWantedState(SystemState.MID)),
+                    new SequentialCommandGroup(new InstantCommand(() -> setWantedState(SystemState.TRANSITION)),
                         new WaitCommand(0.5),
                         new InstantCommand(() -> setWantedState(SystemState.NEUTRAL))).schedule();
                 else
@@ -303,7 +307,7 @@ public class Arm implements Subsystem {
             if (m_controller.getOptionsButtonPressed()){
                 // TODO, how to do this with Pro API, 
                 // when rotateswitch is tripped, this is the rotate motor position value:
-                m_rotateMotor.setRotorPosition(1.26);
+                m_rotateMotor.setRotorPosition(0);
                 m_rotateMotor.setSafetyEnabled(m_manualMode);
             }
         }
@@ -336,7 +340,7 @@ public class Arm implements Subsystem {
                 configExtend(24.0);    //39949/4096
                 break;
             case HIGH:
-				configRotate(-23.0); // -9.6);   //-39320/4096
+				configRotate(-21.0); // -9.6);   //-39320/4096
                 // configRotateAngle(45);   //TODO: tweak angle
 				configExtend(57.0);  //61.5);     //116256/4096
                 break;
@@ -349,6 +353,10 @@ public class Arm implements Subsystem {
 				configRotate(19.0);    //(41320-4000)/4096
                 // configRotateAngle(-45);   //TODO: tweak angle
 				configExtend(57.0);  //62.5);  //27.41);     //112256/4096
+                break;
+            case TRANSITION:
+                configExtend(24.0);
+                configRotate(-21.0);
                 break;
             case MANUAL:
                 manualControl(m_controller.getLeftX(), -m_controller.getRightY());
