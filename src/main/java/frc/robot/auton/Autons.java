@@ -45,7 +45,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(1.7),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
