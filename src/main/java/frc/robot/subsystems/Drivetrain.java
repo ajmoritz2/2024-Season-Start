@@ -56,8 +56,8 @@ public class Drivetrain implements Subsystem {
         new Translation2d(-Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0)
     );
 
-    private final SlewRateLimiter slewX = new SlewRateLimiter(18);
-    private final SlewRateLimiter slewY = new SlewRateLimiter(18);
+    private final SlewRateLimiter slewX = new SlewRateLimiter(16);
+    private final SlewRateLimiter slewY = new SlewRateLimiter(16);
     private final SlewRateLimiter slewRot = new SlewRateLimiter(1880);
 
  
