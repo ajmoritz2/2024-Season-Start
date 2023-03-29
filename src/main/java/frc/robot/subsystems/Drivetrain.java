@@ -213,38 +213,10 @@ public class Drivetrain implements Subsystem {
         periodicIO.chassisVy = chassisVelocity[1];
         periodicIO.goalVx = chassisVelocity[2];
         periodicIO.goalVy = chassisVelocity[3];
-
-        if(controller.getAButtonPressed())
-            setWantedState(WantedState.AUTO_BALANCE);
-        if(controller.getAButtonReleased())
-            setWantedState(WantedState.MANUAL_CONTROL);
         
-        crawling = false;
-
-        pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
-
-        
-        if (Math.abs(pitchAngle) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && balancedX){
-            balancedX = false;
-        } else if (!balancedX && Math.abs(pitchAngle) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
-            balancedX = true;
-        }
-
-        if (controller.getRightBumper()){
-            setWantedState(WantedState.LOCK_ROTATION);
-            lockDir = 180;
-            lockButton = true;
-        } else if (controller.getLeftBumper()){
-            setWantedState(WantedState.LOCK_ROTATION);
-            lockDir = 360;
-            lockButton = false;
-        }else if (currentState == SystemState.LOCK_ROTATION){
-            setWantedState(WantedState.MANUAL_CONTROL);
-        }
+        checkButtons();
 
     }
-
-    
 
     @Override
     public void writePeriodicOutputs(double timestamp)
@@ -280,23 +252,69 @@ public class Drivetrain implements Subsystem {
         updateStateVariables(moduleStates);
     }
 
+    
+    private SystemState defaultStateChange() {
+		switch (wantedState){
+            /*case IDLE:
+                return SystemState.IDLE;*/
+            case AUTO_BALANCE:
+                return SystemState.AUTO_BALANCE;
+            case TRAJECTORY_FOLLOWING:
+				return SystemState.TRAJECTORY_FOLLOWING;
+            default:
+            case MANUAL_CONTROL:
+                return SystemState.MANUAL_CONTROL;
+            case LOCK_ROTATION:
+                return SystemState.LOCK_ROTATION;
+		}
+	}
+
     @Override
     public void periodic() {
         
     }
 
+    private void checkButtons(){
+        if(controller.getAButtonPressed())
+            setWantedState(WantedState.AUTO_BALANCE);
+        if(controller.getAButtonReleased())
+            setWantedState(WantedState.MANUAL_CONTROL);
+        
+        pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
+
+        
+        if (Math.abs(pitchAngle) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && balancedX){
+            balancedX = false;
+        } else if (!balancedX && Math.abs(pitchAngle) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
+            balancedX = true;
+        }
+
+        if (controller.getRightBumper()){
+            setWantedState(WantedState.LOCK_ROTATION);
+            lockDir = 180;
+            lockButton = true;
+        } else if (controller.getLeftBumper()){
+            setWantedState(WantedState.LOCK_ROTATION);
+            lockDir = 360;
+            lockButton = false;
+        }else if (currentState == SystemState.LOCK_ROTATION){
+            setWantedState(WantedState.MANUAL_CONTROL);
+        }
+    }
+
     private double correctRightRotation(double goal){
         double steeringAdjust = 0;
-        double maxJoystickRadians = Math.PI;
         final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
-        final double Kp = -0.0001;
-        final double min_command = 0.06;
+        final double Kp = 0.0001;
+        final double min_command = 1;
+
+        double correctedError = heading_error - Math.PI;
     
         if(Math.abs(heading_error)>0.1){
             if(heading_error>Math.PI)
-              steeringAdjust = 1;
+              steeringAdjust = Kp*correctedError + min_command; //positive
             else
-              steeringAdjust = -1;
+              steeringAdjust = Kp*correctedError - min_command; //negative TEST THIS ONE FIRST!!!
         } else {
             steeringAdjust = 0;
         }
@@ -305,16 +323,15 @@ public class Drivetrain implements Subsystem {
 
     private double correctLeftRotation(double goal){
         double steeringAdjust = 0;
-        double maxJoystickRadians = Math.PI;
         final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
-        final double Kp = -0.0001;
-        final double min_command = 0.06;
+        final double Kp = 0.0001;
+        final double min_command = 1;
     
         if(Math.abs(heading_error)>0.1){
             if(heading_error<0)
-              steeringAdjust = 1;
+              steeringAdjust = heading_error*Kp + min_command; // positive
             else
-              steeringAdjust = -1;
+              steeringAdjust = heading_error*Kp - min_command; // negative
         } else {
             steeringAdjust = 0;
         }
@@ -326,9 +343,6 @@ public class Drivetrain implements Subsystem {
     }
 
     private SwerveModuleState[] autoBalance(){
-        // Uncomment the line below this to simulate the gyroscope axis with a controller joystick
-        // Double currentAngle = -1 * Robot.controller.getRawAxis(Constants.LEFT_VERTICAL_JOYSTICK_AXIS) * 45;
-
         // TODO: Cap the angles given so we never calculate above a certain value.
         double xAxisRate = 0;         
         
@@ -350,22 +364,6 @@ public class Drivetrain implements Subsystem {
  
         
     }
-
-    private SystemState defaultStateChange() {
-		switch (wantedState){
-            /*case IDLE:
-                return SystemState.IDLE;*/
-            case AUTO_BALANCE:
-                return SystemState.AUTO_BALANCE;
-            case TRAJECTORY_FOLLOWING:
-				return SystemState.TRAJECTORY_FOLLOWING;
-            default:
-            case MANUAL_CONTROL:
-                return SystemState.MANUAL_CONTROL;
-            case LOCK_ROTATION:
-                return SystemState.LOCK_ROTATION;
-		}
-	}
 
     private double[] chassisSpeedsGetter(){
         double[] speeds = new double[4];
@@ -438,9 +436,7 @@ public class Drivetrain implements Subsystem {
         
         // SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
         // SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
-         double heading_error = getYaw().getRadians()- Math.toRadians(lockDir);
-
-        SmartDashboard.putNumber("headingangle", heading_error);
+        
         SmartDashboard.putNumber("Yaw", getYaw().getRadians());
         SmartDashboard.putNumber("Goal Angle", lockDir);
 
