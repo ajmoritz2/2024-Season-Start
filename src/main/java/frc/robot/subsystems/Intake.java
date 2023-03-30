@@ -44,6 +44,9 @@ public class Intake implements Subsystem {
 
     private final PS4Controller controller;
 
+    private double m_IntakeStatorCurrent = 0;
+    private double m_intakePercentOut = 0;
+
 
     public Intake(PS4Controller controller){
         intakeMotor = new TalonFX(Constants.INTAKE.INTAKE_MOTOR, "MANIPbus");
@@ -89,6 +92,9 @@ public class Intake implements Subsystem {
 
     @Override
     public void readPeriodicInputs(double timestamp){
+
+        m_IntakeStatorCurrent = intakeMotor.getStatorCurrent();
+
         if (controller.getL1ButtonPressed())
             wantedState =  WantedState.INTAKING_CONE;
         if (controller.getL1ButtonReleased())
@@ -99,14 +105,14 @@ public class Intake implements Subsystem {
         if (controller.getL2ButtonReleased())
             wantedState = WantedState.IDLE;
 
-        if (currentState == SystemState.INTAKING_CONE && getIntakeCurrent() > 200){
+        if (currentState == SystemState.INTAKING_CONE && m_IntakeStatorCurrent > 200){
             new SequentialCommandGroup(
                 new WaitCommand(5),
                 new InstantCommand(()-> setWantedState(WantedState.IDLE))
             );
             haveCone = true;
         }
-        if (currentState == SystemState.INTAKING_CUBE && getIntakeCurrent() > 100){
+        if (currentState == SystemState.INTAKING_CUBE && m_IntakeStatorCurrent > 100){
             new SequentialCommandGroup(
                 new WaitCommand(5),
                 new InstantCommand(()-> setWantedState(WantedState.IDLE_CUBE))
@@ -167,15 +173,19 @@ public class Intake implements Subsystem {
     }
 
     public void setIntakeSpeed(double speed){
+        m_intakePercentOut = speed;
         intakeMotor.set(ControlMode.PercentOutput, speed);
     }
     public double getIntakeCurrent(){
-        return intakeMotor.getStatorCurrent();
+        return m_IntakeStatorCurrent;
     }
     @Override
     public void outputTelemetry(double timestamp){
-        SmartDashboard.putNumber("Current Stator Current", getIntakeCurrent());
-        SmartDashboard.putNumber("Supply Current", intakeMotor.getSupplyCurrent());
+        SmartDashboard.putString("Intake State", currentState.toString());
+        SmartDashboard.putNumber("Intake Stator Cur", m_IntakeStatorCurrent);
+        SmartDashboard.putNumber("Intake Supply Cur", intakeMotor.getSupplyCurrent());
+        SmartDashboard.putNumber("Intake Motor Temp", intakeMotor.getTemperature());
+        SmartDashboard.putNumber("Intake Percent Out", m_intakePercentOut);
         SmartDashboard.putBoolean("HaveCube", haveCube);
         SmartDashboard.putBoolean("HaveCone", haveCone);
     }

@@ -59,6 +59,16 @@ public class Arm implements Subsystem {
 
     protected double m_rotate_angle;
     protected double m_rotate_rotations;
+    protected double m_extend_rotations;
+    protected boolean m_extendLimitSwitchHit = false;
+    protected double m_extendLimitSwitch_debonce = 0;
+    protected boolean m_rotateLimitSwitchHit = false;
+    protected double m_rotateLimitSwitch_debonce = 0;
+    protected boolean m_rotateSwitchStuck = false;
+
+    protected double m_rotateAngle = 0;
+    protected double m_rotateVelocity = 0;
+
 
 
     private final Intake m_intake;
@@ -76,7 +86,7 @@ public class Arm implements Subsystem {
         m_extendLimitSwitch = new DigitalInput(9);
 
         //---------------------------------------------------------------------
-        // rotateEncoderInit();
+        rotateEncoderInit();
         rotateMotorInit();
 		m_rotateLimitSwitch = new DigitalInput(0);
 
@@ -196,23 +206,23 @@ public class Arm implements Subsystem {
     //     m_extendEncoder.getVelocity().setUpdateFrequency(100);
     // }
 
-    // private void rotateEncoderInit(){
-    //     m_rotateEncoder = new CANcoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
+    private void rotateEncoderInit(){
+        m_rotateEncoder = new CANcoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
 
-    //     /* Configure CANcoder to zero the magnet appropriately */
-    //     CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
+        /* Configure CANcoder to zero the magnet appropriately */
+        CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
     
-    //     // cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
-    //     cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
-    //     // cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
-    //     cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-    //     // cc_cfg.MagnetSensor.MagnetOffset = 0.1; //0; // 3.24; //0; //-2.82; //-1.82; //-1.2; //-1.52; //-1.77; // -1.866; //-1.74; //-1.82;
-    //     m_rotateEncoder.getConfigurator().apply(cc_cfg);
+        // cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
+        cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
+        // cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+        cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+        // cc_cfg.MagnetSensor.MagnetOffset = 0.1; //0; // 3.24; //0; //-2.82; //-1.82; //-1.2; //-1.52; //-1.77; // -1.866; //-1.74; //-1.82;
+        m_rotateEncoder.getConfigurator().apply(cc_cfg);
 
-    //     /* Speed up signals to an appropriate rate */
-    //     m_rotateEncoder.getPosition().setUpdateFrequency(100);
-    //     m_rotateEncoder.getVelocity().setUpdateFrequency(100);
-    // }
+        /* Speed up signals to an appropriate rate */
+        // m_rotateEncoder.getPosition().setUpdateFrequency(100);
+        // m_rotateEncoder.getVelocity().setUpdateFrequency(100);
+    }
     
     @Override
     public void processLoop(double timestamp) {
@@ -260,17 +270,41 @@ public class Arm implements Subsystem {
     @Override
     public void readPeriodicInputs(double timestamp) {
   
-       if(!m_extendLimitSwitch.get())
-           zeroExtendSensor();
 
-       if(!m_rotateLimitSwitch.get()){
-           //limit switch hit, position rotor should be at this point
-           //TODO - should this be -1.26?  or this is hit going backwards, so stay positive.
-           //  also should we be doing this every loop? and every time passed?
-           //  does this mess-up motion magic?
-           //  maybe should be only in manual mode?
-           m_rotateMotor.setRotorPosition(2.6);
-        }
+        m_extendLimitSwitchHit = m_extendLimitSwitch.get();
+        m_rotateLimitSwitchHit = m_rotateLimitSwitch.get();
+
+        m_rotateAngle = m_rotateEncoder.getAbsolutePosition().getValue();
+        m_rotateVelocity = m_rotateEncoder.getVelocity().getValue();
+
+       if(!m_extendLimitSwitchHit){
+           zeroExtendSensor();
+       }
+
+    //    if(!m_rotateLimitSwitchHit){
+    //         //limit switch hit, position rotor should be at this point
+    //         //TODO - should this be -1.26?  or this is hit going backwards, so stay positive.
+    //         //  also should we be doing this every loop? and every time passed?
+    //         //  does this mess-up motion magic?
+    //         //  maybe should be only in manual mode?
+            
+    //         if (m_rotateLimitSwitch_debonce < 5 ){
+    //             m_rotateLimitSwitch_debonce++;
+
+    //         } else if (m_rotateLimitSwitch_debonce == 5 ){
+    //             //we have a pulse low for 5 counts ( 5 * 20ms = 100ms)    
+    //             m_rotateMotor.setRotorPosition(2.6);
+    //             m_rotateLimitSwitch_debonce = 0;
+    //         } else {
+    //             // must be stuck,  do nothing
+    //             m_rotateSwitchStuck = true;
+    //         }
+    //     } else {
+    //         //switch is open, so count back to zero and stay there while open
+    //         if (m_rotateLimitSwitch_debonce > 0)
+    //             m_rotateLimitSwitch_debonce--;
+    //     }
+    
 
         if (!(m_currentState == SystemState.MANUAL)){
             // if(m_intake.getIntakeCurrent()>=200 && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.PLACING && m_intake.getCurrentState() != frc.robot.subsystems.Intake.SystemState.IDLE)
@@ -402,21 +436,24 @@ public class Arm implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp){
-        SmartDashboard.putString("arm state", m_currentState.toString());
-        SmartDashboard.putBoolean("ExtendLimitSwitch", m_extendLimitSwitch.get());
-        SmartDashboard.putBoolean("RotateLimitSwitch", m_rotateLimitSwitch.get());
-        SmartDashboard.putString("Extend Motor Pos", m_extendMotor.getPosition().toString());
-        SmartDashboard.putString("Rotate Motor Pos", m_rotateMotor.getPosition().toString());
-		SmartDashboard.putString("Extend Motor Temp", m_extendMotor.getDeviceTemp().toString());
-		SmartDashboard.putString("Rotate Motor Temp", m_rotateMotor.getDeviceTemp().toString());
+        SmartDashboard.putString("Arm State", m_currentState.toString());
+        SmartDashboard.putBoolean("ExtendLimitSwitch", m_extendLimitSwitchHit);
+        SmartDashboard.putBoolean("RotateLimitSwitch", m_rotateLimitSwitchHit);
+        SmartDashboard.putNumber("Extend Motor Pos", m_extendMotor.getPosition().getValue());
+        SmartDashboard.putNumber("Rotate Motor Pos", m_rotateMotor.getPosition().getValue());
+		SmartDashboard.putNumber("Extend Motor Temp", m_extendMotor.getDeviceTemp().getValue());
+		SmartDashboard.putNumber("Rotate Motor Temp", m_rotateMotor.getDeviceTemp().getValue());
         // SmartDashboard.putNumber("rotate angle commanded", m_rotate_angle);
         SmartDashboard.putNumber("rotate rotations commanded", m_rotate_rotations);
+        SmartDashboard.putNumber("extend rotations commanded", m_extend_rotations);
         SmartDashboard.putBoolean("Manual Mode", m_manualMode);
         // SmartDashboard.putString("rotate encoder pos", m_rotateEncoder.getPosition().toString());
         // SmartDashboard.putBoolean("Ext Motor sfty en", m_extendMotor.isSafetyEnabled());
         // SmartDashboard.putBoolean("Rot Motor sfty en", m_rotateMotor.isSafetyEnabled());
         SmartDashboard.putNumber("Ext Motor sup cur", m_extendMotor.getSupplyCurrent().getValue());
         SmartDashboard.putNumber("Rot Motor sup cur", m_rotateMotor.getSupplyCurrent().getValue());
+        SmartDashboard.putNumber("Arm Angle", m_rotateAngle);
+        SmartDashboard.putNumber("Arm Velocity", m_rotateVelocity);
     }
 
     private SystemState handleManual(){
@@ -429,6 +466,7 @@ public class Arm implements Subsystem {
 
     public void configExtend(double position){
         //position is number of rotations, not number of ticks
+        m_extend_rotations = position;
         m_extendMotor.setControl(m_extendMotorMMV.withPosition(position));
     }
    
