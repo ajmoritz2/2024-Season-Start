@@ -17,6 +17,7 @@ import com.ctre.phoenixpro.hardware.CANcoder;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.PS4Controller;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -73,6 +74,7 @@ public class Arm implements Subsystem {
 
     private final Intake m_intake;
     private final PS4Controller m_controller;
+    private final PowerDistribution m_PDH; 
 
     private boolean m_manualMode = false;
 
@@ -80,6 +82,8 @@ public class Arm implements Subsystem {
 
         m_intake = intake;
         m_controller = controller;
+
+        m_PDH = new PowerDistribution();
 
         // extendEncoderInit();
 		extendMotorInit();
@@ -222,6 +226,8 @@ public class Arm implements Subsystem {
         /* Speed up signals to an appropriate rate */
         // m_rotateEncoder.getPosition().setUpdateFrequency(100);
         // m_rotateEncoder.getVelocity().setUpdateFrequency(100);
+
+        zeroRotateEncoder();
     }
     
     @Override
@@ -452,8 +458,11 @@ public class Arm implements Subsystem {
         // SmartDashboard.putBoolean("Rot Motor sfty en", m_rotateMotor.isSafetyEnabled());
         SmartDashboard.putNumber("Ext Motor sup cur", m_extendMotor.getSupplyCurrent().getValue());
         SmartDashboard.putNumber("Rot Motor sup cur", m_rotateMotor.getSupplyCurrent().getValue());
-        SmartDashboard.putNumber("Arm Angle", m_rotateAngle);
+        SmartDashboard.putNumber("Arm Rotations", m_rotateAngle);
+        SmartDashboard.putNumber("Arm Angle", m_rotateAngle*113.78);
         SmartDashboard.putNumber("Arm Velocity", m_rotateVelocity);
+        SmartDashboard.putNumber("PDH Voltage", m_PDH.getVoltage());
+        SmartDashboard.putNumber("PDH Current", m_PDH.getTotalCurrent());
     }
 
     private SystemState handleManual(){
@@ -491,6 +500,7 @@ public class Arm implements Subsystem {
     public void zeroSensors() {
 	    zeroExtendSensor();
         zeroRotateSensor();
+        zeroRotateEncoder();
     }
    
     public void zeroExtendSensor(){
@@ -505,6 +515,10 @@ public class Arm implements Subsystem {
         //  No need to zero.   absolute CAN coder position will be used.
         //  so if it starts off zero, it will go to zero upon going to Nuetral state 
         //NOPE, magnet offset did not work.   go back to set rotor to zero.
+    }
+
+    public void zeroRotateEncoder(){
+        m_rotateEncoder.setPosition(0);
     }
 
 
