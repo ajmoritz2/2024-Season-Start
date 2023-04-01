@@ -219,7 +219,7 @@ public class Arm implements Subsystem {
         // cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
         cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         // cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
-        cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+        cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
         // cc_cfg.MagnetSensor.MagnetOffset = 0.1; //0; // 3.24; //0; //-2.82; //-1.82; //-1.2; //-1.52; //-1.77; // -1.866; //-1.74; //-1.82;
         m_rotateEncoder.getConfigurator().apply(cc_cfg);
 
@@ -283,7 +283,7 @@ public class Arm implements Subsystem {
         m_rotateEncoderAngle = m_rotateEncoder.getAbsolutePosition().getValue();
         m_rotateEncoderVelocity = m_rotateEncoder.getVelocity().getValue();
 
-        m_rotateEncoderRotations = m_rotateEncoderAngle*113.78;
+        m_rotateEncoderRotations = m_rotateEncoderAngle*142.22;
 
        if(!m_extendLimitSwitchHit){
            zeroExtendSensor();
@@ -342,10 +342,13 @@ public class Arm implements Subsystem {
                 setWantedState(SystemState.HUMAN_FOLD); // hUMAN fOLD
             if(m_controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
+
+            if (m_controller.getOptionsButtonPressed())
+                syncRotateMotor();
         }
 
-		if (m_controller.getOptionsButtonPressed())
-        	syncRotateMotor();
+		else if (m_controller.getOptionsButtonPressed())
+        	zeroRotateEncoder();
 			
         if (m_controller.getPSButtonPressed()){
             
