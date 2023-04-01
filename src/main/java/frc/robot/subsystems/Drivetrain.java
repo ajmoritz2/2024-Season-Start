@@ -512,6 +512,7 @@ public class Drivetrain implements Subsystem {
         
         SmartDashboard.putNumber("Yaw", getYaw().getRadians());
         SmartDashboard.putNumber("Goal Angle", lockDir);
+        SmartDashboard.putNumber("Pitch", pitchAngle);
 
 
         for(SwerveModule mod : mSwerveMods){
