@@ -257,7 +257,7 @@ public class Drivetrain implements Subsystem {
                 //System.out.println("IN balance");
                 break;
             case LIMELIGHT_CRUISE:
-                moduleStates = drive(0, Constants.DRIVE.CRUISING_SPEED, Robot.m_robotContainer.limelight.steeringAdjust(), false);
+                moduleStates = drive(Constants.DRIVE.CRUISING_SPEED, 0, Robot.m_robotContainer.limelight.steeringAdjust()*Constants.AutoConstants.kMaxAngularSpeedRadiansPerSecond, false);
                 break;
             case LOCK_ROTATION:
                 if(lockButton)
@@ -315,16 +315,6 @@ public class Drivetrain implements Subsystem {
             setWantedState(WantedState.AUTO_BALANCE);
         if(controller.getAButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
-
-        if(controller.getBButtonPressed())
-            setWantedState(WantedState.CRUISE);
-        if(controller.getBButtonReleased())
-            setWantedState(WantedState.MANUAL_CONTROL);
-
-        if(controller.getXButtonPressed())
-            setWantedState(WantedState.LIMELIGHT_CRUISE);
-        if(controller.getXButtonReleased())
-            setWantedState(WantedState.MANUAL_CONTROL);
         
         pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
 
@@ -335,7 +325,13 @@ public class Drivetrain implements Subsystem {
             balancedX = true;
         }
 
-        if (controller.getRightBumper()){
+        if (getRightTrigger() || controller.getRightBumper()){
+            setWantedState(WantedState.LIMELIGHT_CRUISE);
+        } else if (currentState == SystemState.LIMELIGHT_CRUISE){
+            setWantedState(WantedState.MANUAL_CONTROL);
+        }
+
+        if (getLeftTrigger()){
             setWantedState(WantedState.LOCK_ROTATION);
             lockDir = 180;
             lockButton = true;
@@ -475,6 +471,14 @@ public class Drivetrain implements Subsystem {
     @Override
     public String getId() {
         return "Drivetrain";
+    }
+
+    public boolean getLeftTrigger(){
+        return (controller.getRawAxis(2) == 1) ? true : false;
+    }
+
+    public boolean getRightTrigger(){
+        return (controller.getRawAxis(3) == 1) ? true : false;
     }
 
     @Override

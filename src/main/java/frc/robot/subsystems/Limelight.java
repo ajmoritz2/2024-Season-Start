@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Robot;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -10,8 +11,8 @@ public class Limelight implements Subsystem {
 
     private enum SystemState{
         NEUTRAL,
-        APRIL_TAG,
-        VISION_TAPE
+        CONE,
+        CUBE
     }
 
     public static NetworkTable Limelight;
@@ -44,10 +45,10 @@ public class Limelight implements Subsystem {
             case NEUTRAL:
                 newState = stateChange();
                 break;
-            case APRIL_TAG:
+            case CONE:
                 newState = stateChange();
                 break;
-            case VISION_TAPE:
+            case CUBE:
                 newState = stateChange();
                 break;
         }
@@ -57,30 +58,32 @@ public class Limelight implements Subsystem {
 
     @Override
     public void readPeriodicInputs(double timestamp){
-        /* 
-        if(controller.getLeftBumperPressed())
-            setWantedState(SystemState.APRIL_TAG);
-        if(controller.getLeftBumperReleased())
-            setWantedState(SystemState.NEUTRAL);
+        
         if(controller.getRightBumperPressed())
-            setWantedState(SystemState.VISION_TAPE);
+            setWantedState(SystemState.CONE);
         if(controller.getRightBumperReleased())
             setWantedState(SystemState.NEUTRAL);
-        */
+
+        // if (Robot.m_robotContainer.drivetrain.getRightTrigger()){
+        //     setWantedState(SystemState.CUBE);
+        // } else if (currentState == SystemState.CUBE){
+        //     setWantedState(SystemState.NEUTRAL);
+        // }
+        
     }
 
     @Override
     public void writePeriodicOutputs(double timestamp){
         switch(currentState){
-            case APRIL_TAG:
+            case CONE:
                 setCameraMode(0, 0 , 2);
                 break;
-            case VISION_TAPE:
+            case CUBE:
                 setCameraMode(0, 0 , 1);
                 break;
             default:
             case NEUTRAL:
-                setCameraMode(1, 1 , 0);
+                setCameraMode(1, 1 , 2);
                 break;
         }
     }
@@ -117,11 +120,14 @@ public class Limelight implements Subsystem {
 
         double steeringAdjust = 0;
         final double heading_error = -X.getDouble(0.0);
-        final double Kp = -0.0001;
-        final double min_command = 0.06;
+        final double area = A.getDouble(0.0);
+
+        final double Kp = 0.03;
+        final double min_command = 0.03;
     
-        if(Math.abs(heading_error)>1.0){
-            if(heading_error<0)
+        if(Math.abs(heading_error)>(4.0)){
+            if(heading_error>0)
+
               steeringAdjust = Kp*heading_error+min_command;
             else
               steeringAdjust = Kp*heading_error-min_command;
