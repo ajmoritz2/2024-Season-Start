@@ -62,14 +62,14 @@ public class Arm implements Subsystem {
     protected double m_rotate_rotations;
     protected double m_extend_rotations;
     protected boolean m_extendLimitSwitchHit = false;
-    protected double m_extendLimitSwitch_debonce = 0;
+    // protected double m_extendLimitSwitch_debonce = 0;
     protected boolean m_rotateLimitSwitchHit = false;
-    protected double m_rotateLimitSwitch_debonce = 0;
-    protected boolean m_rotateSwitchStuck = false;
+    // protected double m_rotateLimitSwitch_debonce = 0;
+    // protected boolean m_rotateSwitchStuck = false;
 
-    protected double m_rotateAngle = 0;
-    protected double m_rotateVelocity = 0;
-
+    protected double m_rotateEncoderAngle = 0;
+    protected double m_rotateEncoderVelocity = 0;
+    protected double m_rotateEncoderRotations = 0;
 
 
     private final Intake m_intake;
@@ -280,8 +280,10 @@ public class Arm implements Subsystem {
         m_extendLimitSwitchHit = m_extendLimitSwitch.get();
         m_rotateLimitSwitchHit = m_rotateLimitSwitch.get();
 
-        m_rotateAngle = m_rotateEncoder.getAbsolutePosition().getValue();
-        m_rotateVelocity = m_rotateEncoder.getVelocity().getValue();
+        m_rotateEncoderAngle = m_rotateEncoder.getAbsolutePosition().getValue();
+        m_rotateEncoderVelocity = m_rotateEncoder.getVelocity().getValue();
+
+        m_rotateEncoderRotations = m_rotateEncoderAngle*113.78;
 
        if(!m_extendLimitSwitchHit){
            zeroExtendSensor();
@@ -340,18 +342,11 @@ public class Arm implements Subsystem {
                 setWantedState(SystemState.HUMAN_FOLD); // hUMAN fOLD
             if(m_controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
-            if (m_controller.getOptionsButtonPressed())
-                setWantedState(SystemState.ZERO);
-            
-        } else {
-            if (m_controller.getOptionsButtonPressed()){
-                // TODO, how to do this with Pro API, 
-                // when rotateswitch is tripped, this is the rotate motor position value:
-                m_rotateMotor.setRotorPosition(0);
-                m_rotateMotor.setSafetyEnabled(m_manualMode);
-            }
         }
 
+		if (m_controller.getOptionsButtonPressed())
+        	syncRotateMotor();
+			
         if (m_controller.getPSButtonPressed()){
             
             if (m_currentState == SystemState.MANUAL){
@@ -406,12 +401,12 @@ public class Arm implements Subsystem {
                 // configRotateAngle(40);   //TODO: tweak angle
                 configExtend(0);
                 break;
-            case ZERO:
-				//TODO how does this work? 
-                configRotate(24.0);   //70057/4096
-                // configRotateAngle(-45.10);
-                configExtend(0);
-                break;
+            // case ZERO:
+			// 	//TODO how does this work? 
+            //     configRotate(24.0);   //70057/4096
+            //     // configRotateAngle(-45.10);
+            //     configExtend(0);
+            //     break;
             default:
             case NEUTRAL:
                 // neutralize();
@@ -421,6 +416,14 @@ public class Arm implements Subsystem {
                 break;
             
         }
+    }
+
+    private void syncRotateMotor(){
+        // only do this when in a known location (i.e. not while arm moving)
+        // And only do this if not too far off (because too far off suggests bad encoder)
+        // if (Math.abs(m_rotateEncoderRotations-m_rotate_rotations) <2){
+            m_rotateMotor.setRotorPosition(m_rotateEncoderRotations);
+        // }
     }
 
     // public void neutralize(){
@@ -450,17 +453,17 @@ public class Arm implements Subsystem {
 		SmartDashboard.putNumber("Extend Motor Temp", m_extendMotor.getDeviceTemp().getValue());
 		SmartDashboard.putNumber("Rotate Motor Temp", m_rotateMotor.getDeviceTemp().getValue());
         // SmartDashboard.putNumber("rotate angle commanded", m_rotate_angle);
-        SmartDashboard.putNumber("rotate rotations commanded", m_rotate_rotations);
-        SmartDashboard.putNumber("extend rotations commanded", m_extend_rotations);
+        SmartDashboard.putNumber("Rotate setpoint", m_rotate_rotations);
+        SmartDashboard.putNumber("Extend setpoint", m_extend_rotations);
         SmartDashboard.putBoolean("Manual Mode", m_manualMode);
         // SmartDashboard.putString("rotate encoder pos", m_rotateEncoder.getPosition().toString());
         // SmartDashboard.putBoolean("Ext Motor sfty en", m_extendMotor.isSafetyEnabled());
         // SmartDashboard.putBoolean("Rot Motor sfty en", m_rotateMotor.isSafetyEnabled());
         SmartDashboard.putNumber("Ext Motor sup cur", m_extendMotor.getSupplyCurrent().getValue());
         SmartDashboard.putNumber("Rot Motor sup cur", m_rotateMotor.getSupplyCurrent().getValue());
-        SmartDashboard.putNumber("Arm Rotations", m_rotateAngle);
-        SmartDashboard.putNumber("Arm Angle", m_rotateAngle*113.78);
-        SmartDashboard.putNumber("Arm Velocity", m_rotateVelocity);
+        SmartDashboard.putNumber("Arm Ecdr Angle", m_rotateEncoderAngle);
+        SmartDashboard.putNumber("Arm Ecdr Rot", m_rotateEncoderRotations);
+        SmartDashboard.putNumber("Arm Ecdr Velocity", m_rotateEncoderVelocity);
         SmartDashboard.putNumber("PDH Voltage", m_PDH.getVoltage());
         SmartDashboard.putNumber("PDH Current", m_PDH.getTotalCurrent());
     }
