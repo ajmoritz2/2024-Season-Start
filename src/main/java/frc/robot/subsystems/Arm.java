@@ -76,7 +76,7 @@ public class Arm implements Subsystem {
         m_extendLimitSwitch = new DigitalInput(9);
 
         //---------------------------------------------------------------------
-        // rotateEncoderInit();
+        rotateEncoderInit();
         rotateMotorInit();
 		m_rotateLimitSwitch = new DigitalInput(0);
 
@@ -196,23 +196,23 @@ public class Arm implements Subsystem {
     //     m_extendEncoder.getVelocity().setUpdateFrequency(100);
     // }
 
-    // private void rotateEncoderInit(){
-    //     m_rotateEncoder = new CANcoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
+    private void rotateEncoderInit(){
+        m_rotateEncoder = new CANcoder(Constants.ARM.ROTATEENCODER, "MANIPbus");
 
-    //     /* Configure CANcoder to zero the magnet appropriately */
-    //     CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
+        /* Configure CANcoder to zero the magnet appropriately */
+        CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
     
-    //     // cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
-    //     cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
-    //     // cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
-    //     cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-    //     // cc_cfg.MagnetSensor.MagnetOffset = 0.1; //0; // 3.24; //0; //-2.82; //-1.82; //-1.2; //-1.52; //-1.77; // -1.866; //-1.74; //-1.82;
-    //     m_rotateEncoder.getConfigurator().apply(cc_cfg);
+        // cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
+        cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
+        // cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+        cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+        // cc_cfg.MagnetSensor.MagnetOffset = 0.1; //0; // 3.24; //0; //-2.82; //-1.82; //-1.2; //-1.52; //-1.77; // -1.866; //-1.74; //-1.82;
+        m_rotateEncoder.getConfigurator().apply(cc_cfg);
 
-    //     /* Speed up signals to an appropriate rate */
-    //     m_rotateEncoder.getPosition().setUpdateFrequency(100);
-    //     m_rotateEncoder.getVelocity().setUpdateFrequency(100);
-    // }
+        /* Speed up signals to an appropriate rate */
+        m_rotateEncoder.getPosition().setUpdateFrequency(100);
+        m_rotateEncoder.getVelocity().setUpdateFrequency(100);
+    }
     
     @Override
     public void processLoop(double timestamp) {

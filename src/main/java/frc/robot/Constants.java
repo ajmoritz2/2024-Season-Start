@@ -190,6 +190,8 @@ public final class Constants {
          *
          * Should be measured from center to center.
          */
+
+         public static final double CRUISING_SPEED = 1;
     }
 
     public class ARM {

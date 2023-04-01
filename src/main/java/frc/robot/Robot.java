@@ -22,7 +22,7 @@ public class Robot extends TimedRobot {
 
   private Command autonomousCommand;
 
-  private RobotContainer m_robotContainer;
+  public static RobotContainer m_robotContainer;
 
 
   @Override

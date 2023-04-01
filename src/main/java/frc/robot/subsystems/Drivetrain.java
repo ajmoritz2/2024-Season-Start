@@ -22,6 +22,8 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
+import frc.robot.Robot;
+import frc.robot.RobotContainer;
 import frc.robot.SwerveModule;
 import frc.robot.Constants.*;
 import frc.robot.utils.maths.oneDimensionalLookup;
@@ -70,7 +72,9 @@ public class Drivetrain implements Subsystem {
         MANUAL_CONTROL,
         TRAJECTORY_FOLLOWING,           //X,Y axis speeds relative to field
         AUTO_BALANCE,
-        LOCK_ROTATION
+        LOCK_ROTATION,
+        CRUISE,
+        LIMELIGHT_CRUISE
     }
 
     public enum WantedState{
@@ -78,7 +82,9 @@ public class Drivetrain implements Subsystem {
         MANUAL_CONTROL,
         TRAJECTORY_FOLLOWING,
         AUTO_BALANCE,
-        LOCK_ROTATION
+        LOCK_ROTATION,
+        CRUISE,
+        LIMELIGHT_CRUISE
     }
 
     private static class PeriodicIO {
@@ -182,6 +188,12 @@ public class Drivetrain implements Subsystem {
             case LOCK_ROTATION:
                 newState = handleManualControl();
                 break;
+            case CRUISE:
+                newState = handleManualControl();
+                break;
+            case LIMELIGHT_CRUISE:
+                newState = handleManualControl();
+                break;
             case IDLE:
                 newState = handleManualControl();
                 break;
@@ -230,12 +242,18 @@ public class Drivetrain implements Subsystem {
                 moduleStates = autoBalance();
                 //System.out.println("IN balance");
                 break;
+            case LIMELIGHT_CRUISE:
+                moduleStates = drive(0, Constants.DRIVE.CRUISING_SPEED, Robot.m_robotContainer.limelight.steeringAdjust(), false);
+                break;
             case LOCK_ROTATION:
                 if(lockButton)
                     moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRightRotation(lockDir), !periodicIO.robotOrientedModifier);
                 else
                     moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctLeftRotation(lockDir), !periodicIO.robotOrientedModifier);
 
+                break;
+            case CRUISE:
+                moduleStates = drive(0, Constants.DRIVE.CRUISING_SPEED, periodicIO.modifiedJoystickR, false);
                 break;
             case MANUAL_CONTROL:
                 moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
@@ -266,6 +284,10 @@ public class Drivetrain implements Subsystem {
                 return SystemState.MANUAL_CONTROL;
             case LOCK_ROTATION:
                 return SystemState.LOCK_ROTATION;
+            case CRUISE:
+                return SystemState.CRUISE;
+            case LIMELIGHT_CRUISE:
+                return SystemState.LIMELIGHT_CRUISE;
 		}
 	}
 
@@ -300,6 +322,33 @@ public class Drivetrain implements Subsystem {
         }else if (currentState == SystemState.LOCK_ROTATION){
             setWantedState(WantedState.MANUAL_CONTROL);
         }
+    }
+
+    /** 
+     * Need to test this function
+     * 
+     * @param goal the goal angle
+     *  @return whether the stuff works
+     */
+    private double correctAllRotation(double goal) {
+        double steeringAdjust = 0;
+        double heading_error = (getYaw().getRadians() - Math.toRadians(goal));
+        final double Kp = 0.0001;
+        final double min_command = 1;
+    
+        if(Math.abs(heading_error)>0.1){
+            if(heading_error<lockToPi(goal + Math.PI))
+              steeringAdjust = heading_error*Kp + min_command; // positive
+            else
+              steeringAdjust = heading_error*Kp - min_command; // negative
+        } else {
+            steeringAdjust = 0;
+        }
+        return steeringAdjust*2;
+    }
+
+    private double lockToPi(double value){
+        return ((value >= Math.PI*2)) ? value-(Math.PI*2) : value;
     }
 
     private double correctRightRotation(double goal){

@@ -39,7 +39,7 @@ public class RobotContainer {
 	public final Drivetrain drivetrain;
 	public final Arm arm;
 	private final Intake intake;
-	private final Limelight limelight;
+	public final Limelight limelight;
 
 	private SendableChooser<Command> autonChooser;
 
