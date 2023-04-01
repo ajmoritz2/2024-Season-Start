@@ -28,6 +28,26 @@ import frc.robot.Constants;
 
 public class Arm implements Subsystem {
 
+/*  MANIPULATOR CONTROLLER SCHEME (PLEASE KEEP UPDATED)
+ * 
+ *  MAPPED BUTTONS:
+ *  Triangle -> Neutral Position
+ *  Cross -> Low Position
+ *  Circle -> Mid Position
+ *  Square -> High Position
+ *  RBumper -> Human Fold Angle
+ *  Options -> Zero Motor Encoder by Limit Switch
+ *  
+ * 
+ *  PS4 Button -> Manual Mode Toggle (Info on SmartDashboard)
+ *  WHEN IN MANUAL:
+ *      RYAxis -> Extend Control
+ *      LXAxis -> Rotate Control
+ *      Options -> Zero the Motor Encoder
+ *  
+ */
+
+
     public enum SystemState{
         NEUTRAL,
         GROUND_ANGLE,

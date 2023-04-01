@@ -29,6 +29,20 @@ import frc.robot.Constants.*;
 import frc.robot.utils.maths.oneDimensionalLookup;
 
 public class Drivetrain implements Subsystem {
+    
+    /*  DRIVE CONTROLLER SCHEME (PLEASE KEEP UPDATED)
+    * 
+     * MAPPED BUTTONS:
+     *  A -> Auto Balance
+     *  B -> Cruise
+     *  X -> Limelight Cruise
+     * 
+     *  RBumper -> Lock to 180 degrees
+     *  LBumper -> Lock to 360 degrees
+     * 
+     *  LAxis -> Drive
+     *  RAxis -> Rotate 
+     */
   
     public static final double MAX_VOLTAGE = 11.0;
   
@@ -300,6 +314,16 @@ public class Drivetrain implements Subsystem {
         if(controller.getAButtonPressed())
             setWantedState(WantedState.AUTO_BALANCE);
         if(controller.getAButtonReleased())
+            setWantedState(WantedState.MANUAL_CONTROL);
+
+        if(controller.getBButtonPressed())
+            setWantedState(WantedState.CRUISE);
+        if(controller.getBButtonReleased())
+            setWantedState(WantedState.MANUAL_CONTROL);
+
+        if(controller.getXButtonPressed())
+            setWantedState(WantedState.LIMELIGHT_CRUISE);
+        if(controller.getXButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
         
         pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
