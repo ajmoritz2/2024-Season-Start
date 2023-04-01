@@ -267,7 +267,7 @@ public class Drivetrain implements Subsystem {
 
                 break;
             case CRUISE:
-                moduleStates = drive(0, Constants.DRIVE.CRUISING_SPEED, periodicIO.modifiedJoystickR, false);
+                moduleStates = drive(Constants.DRIVE.CRUISING_SPEED, 0, periodicIO.modifiedJoystickR, false);
                 break;
             case MANUAL_CONTROL:
                 moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
