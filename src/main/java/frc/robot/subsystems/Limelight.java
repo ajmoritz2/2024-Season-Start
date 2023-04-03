@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -14,6 +15,8 @@ public class Limelight implements Subsystem {
         CONE,
         CUBE
     }
+
+    SlewRateLimiter rotationSlew = new SlewRateLimiter(1, -1, 0);
 
     public static NetworkTable Limelight;
     public static NetworkTableEntry V;
@@ -132,7 +135,7 @@ public class Limelight implements Subsystem {
             else
               steeringAdjust = Kp*heading_error-min_command;
         }
-            return steeringAdjust;
+            return rotationSlew.calculate(steeringAdjust);
       }
 
     public void setCameraMode(final double ledMode, final double camMode, final double pipeline) {
