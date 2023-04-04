@@ -54,6 +54,7 @@ public class Intake implements Subsystem {
         
         intakeMotor.configPeakOutputForward(1);
         intakeMotor.configPeakOutputReverse(-1);
+        intakeMotor.setInverted(true);
         intakeMotor.setNeutralMode(NeutralMode.Brake); 
         haveCone = false;
         haveCube = false;

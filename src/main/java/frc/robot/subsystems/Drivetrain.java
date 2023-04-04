@@ -1,6 +1,8 @@
 
 package frc.robot.subsystems;
 
+import javax.lang.model.util.ElementScanner14;
+
 import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.math.MathUtil;
@@ -49,6 +51,11 @@ public class Drivetrain implements Subsystem {
     public static final double MAX_VELOCITY_METERS_PER_SECOND = 5.36;
 
     public static double pitchAngle = 0;
+
+    public static double yawToLock = 0;
+
+    private boolean limelightLock = false;
+    private boolean limelightDrive = false;
 
     private double lockDir = 180;
     private boolean lockButton = false; // False is Lbumper True is RBumper
@@ -231,7 +238,15 @@ public class Drivetrain implements Subsystem {
 
         periodicIO.modifiedJoystickX = slewX.calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
         periodicIO.modifiedJoystickY = slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+
+        if (limelightLock){
+        periodicIO.modifiedJoystickX = MathUtil.clamp(slewX.calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND)),
+                                                        -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED);
+        periodicIO.modifiedJoystickY =  MathUtil.clamp(slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND)),
+                                                            -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED);
+        } 
         periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND))*0.75;
+        
         
 
         double[] chassisVelocity = chassisSpeedsGetter();
@@ -257,20 +272,24 @@ public class Drivetrain implements Subsystem {
                 //System.out.println("IN balance");
                 break;
             case LIMELIGHT_CRUISE:
-                moduleStates = drive(Constants.DRIVE.CRUISING_SPEED, 0, Robot.m_robotContainer.limelight.steeringAdjust()*Constants.AutoConstants.kMaxAngularSpeedRadiansPerSecond, false);
-                break;
+                if (limelightLock)
+                    moduleStates = drive(MathUtil.clamp(periodicIO.modifiedJoystickY, -Constants.DRIVE.CRUISING_SPEED,Constants.DRIVE.CRUISING_SPEED),
+                        MathUtil.clamp(periodicIO.modifiedJoystickX, -Constants.DRIVE.CRUISING_SPEED,Constants.DRIVE.CRUISING_SPEED), 
+                        periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
+
+                    break;
             case LOCK_ROTATION:
                 if(lockButton)
-                    moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRightRotation(lockDir), !periodicIO.robotOrientedModifier);
+                    moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRightRotation(lockDir), true);
                 else
-                    moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctLeftRotation(lockDir), !periodicIO.robotOrientedModifier);
+                    moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctLeftRotation(lockDir), true);
 
                 break;
             case CRUISE:
                 moduleStates = drive(Constants.DRIVE.CRUISING_SPEED, 0, periodicIO.modifiedJoystickR, false);
                 break;
             case MANUAL_CONTROL:
-                moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
+                moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, true);
                 break;
             default:
             case IDLE:
@@ -325,11 +344,10 @@ public class Drivetrain implements Subsystem {
             balancedX = true;
         }
 
-        if (getRightTrigger() || controller.getRightBumper()){
-            setWantedState(WantedState.LIMELIGHT_CRUISE);
-        } else if (currentState == SystemState.LIMELIGHT_CRUISE){
-            setWantedState(WantedState.MANUAL_CONTROL);
-        }
+        if (controller.getRightBumper())
+            limelightLock = true;
+        else
+            limelightLock = false;
 
         if (getLeftTrigger()){
             setWantedState(WantedState.LOCK_ROTATION);
@@ -356,11 +374,11 @@ public class Drivetrain implements Subsystem {
         final double Kp = 0.0001;
         final double min_command = 1;
     
-        if(Math.abs(heading_error)>0.1){
-            if(heading_error<lockToPi(goal + Math.PI))
+        if(Math.abs(heading_error)>0.04){
+            if(heading_error<lockToPi(Math.toRadians(goal) + Math.PI*2))
               steeringAdjust = heading_error*Kp + min_command; // positive
             else
-              steeringAdjust = heading_error*Kp - min_command; // negative
+              steeringAdjust = -(heading_error*Kp) - min_command; // negative
         } else {
             steeringAdjust = 0;
         }
@@ -374,7 +392,7 @@ public class Drivetrain implements Subsystem {
     private double correctRightRotation(double goal){
         double steeringAdjust = 0;
         final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
-        final double Kp = 0.0001;
+        final double Kp = 0.000001;
         final double min_command = 1;
 
         double correctedError = heading_error - Math.PI;
@@ -393,7 +411,7 @@ public class Drivetrain implements Subsystem {
     private double correctLeftRotation(double goal){
         double steeringAdjust = 0;
         final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
-        final double Kp = 0.0001;
+        final double Kp = 0.00001;
         final double min_command = 1;
     
         if(Math.abs(heading_error)>0.1){
@@ -515,9 +533,10 @@ public class Drivetrain implements Subsystem {
         // SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
         
         SmartDashboard.putNumber("Yaw", getYaw().getRadians());
-        SmartDashboard.putNumber("Goal Angle", lockDir);
+        SmartDashboard.putNumber("Goal Angle", (getYaw().getRadians() - Math.toRadians(yawToLock)));
         SmartDashboard.putNumber("Pitch", pitchAngle);
-
+        SmartDashboard.putNumber("Goal switch",         lockToPi(Math.toRadians(yawToLock) + Math.PI*2)
+        );
 
         for(SwerveModule mod : mSwerveMods){
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
