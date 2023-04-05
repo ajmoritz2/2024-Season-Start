@@ -40,6 +40,8 @@ public class PathPlannerCommand extends SwerveControllerCommand {
         new PIDController(translateKp, translateKi, translateKd),
         new PIDController(translateKp, translateKi, translateKd),
         thetaController,
+        () ->
+          trajectory.getState(trajectory.getStates().size() - 1).holonomicRotation,
         drivetrain::setModuleStatesFromTrajectory, 
         drivetrain);
     

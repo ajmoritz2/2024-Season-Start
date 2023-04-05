@@ -240,10 +240,10 @@ public class Drivetrain implements Subsystem {
         periodicIO.modifiedJoystickY = slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
 
         if (limelightLock){
-        periodicIO.modifiedJoystickX = MathUtil.clamp(slewX.calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND)),
-                                                        -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED);
-        periodicIO.modifiedJoystickY =  MathUtil.clamp(slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND)),
-                                                            -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED);
+        periodicIO.modifiedJoystickX =slewX.calculate( MathUtil.clamp(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
+                                                        -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
+        periodicIO.modifiedJoystickY =  slewY.calculate(MathUtil.clamp(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
+                                                            -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
         } 
         periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND))*0.75;
         

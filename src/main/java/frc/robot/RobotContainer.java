@@ -97,10 +97,26 @@ public class RobotContainer {
 	private void configureAuton() {
 		autonChooser = new SendableChooser<>();
 		//autonChooser.setDefaultOption("Do Nothing", new InstantCommand(() -> System.out.println("Doing nothing...")));
-		autonChooser.addOption("center", Autons.center(drivetrain,arm,intake));
-		autonChooser.addOption("clearBlue", Autons.clearBlue(drivetrain, arm, intake));
-		autonChooser.addOption("clearRed", Autons.clearRed(drivetrain, arm, intake));
-		autonChooser.addOption("wireCover", Autons.wireCover(drivetrain, arm, intake));
+		autonChooser.addOption("Center1 -Score", Autons.center1(drivetrain,arm,intake));
+		autonChooser.addOption("Center2 -Score,Leave", Autons.center2(drivetrain, arm, intake));
+		autonChooser.addOption("Center3 -Score,Leave,Balance", Autons.center3(drivetrain, arm, intake));
+		autonChooser.addOption("Center4 -Score,Leave,Pickup Cube,Balance", Autons.center4(drivetrain, arm, intake));
+		autonChooser.addOption("ClearBlue1 -Score", Autons.clearBlue1(drivetrain,arm,intake));
+		autonChooser.addOption("ClearBlue2 -Score,Leave", Autons.clearBlue2(drivetrain, arm, intake));
+		autonChooser.addOption("ClearBlue3 -Score,Leave,Pickup Cube,Score,Leave", Autons.clearBlue3(drivetrain, arm, intake));
+		autonChooser.addOption("ClearBlue4 -Score,Leave,Pickup Cube,Score,Leave,Pickup Cone", Autons.clearBlue4(drivetrain, arm, intake));
+		autonChooser.addOption("ClearRed1 -Score", Autons.clearRed1(drivetrain,arm,intake));
+		autonChooser.addOption("ClearRed2 -Score,Leave", Autons.clearRed2(drivetrain, arm, intake));
+		autonChooser.addOption("ClearRed3 -Score,Leave,Pickup Cube,Score,Leave", Autons.clearRed3(drivetrain, arm, intake));
+		autonChooser.addOption("ClearRed4 -Score,Leave,Pickup Cube,Score,Leave,Pickup Cone", Autons.clearRed4(drivetrain, arm, intake));
+		autonChooser.addOption("WiredBlue1 -Score", Autons.wireCoverBlue1(drivetrain,arm,intake));
+		autonChooser.addOption("WiredBlue2 -Score,Leave", Autons.wireCoverBlue2(drivetrain, arm, intake));
+		autonChooser.addOption("WiredBlue3 -Score,Leave,Pickup Cube,Score,Leave", Autons.wireCoverBlue3(drivetrain, arm, intake));
+		autonChooser.addOption("WiredBlue4 -Score,Leave,Pickup Cube,Score,Leave,Pickup Cone", Autons.wireCoverBlue4(drivetrain, arm, intake));
+		autonChooser.addOption("WiredRed1 -Score", Autons.wireCoverRed1(drivetrain,arm,intake));
+		autonChooser.addOption("WiredRed2 -Score,Leave", Autons.wireCoverRed2(drivetrain, arm, intake));
+		autonChooser.addOption("WiredRed3 -Score,Leave,Pickup Cube,Score,Leave", Autons.wireCoverRed3(drivetrain, arm, intake));
+		autonChooser.addOption("WiredRed4 -Score,Leave,Pickup Cube,Score,Leave,Pickup Cone", Autons.wireCoverRed4(drivetrain, arm, intake));
 		autonChooser.addOption("EMERGENCY USE ONLY!!: NOTHING", Autons.emergencyDonNothing(drivetrain));
 		SmartDashboard.putData("auton/chooser",autonChooser);
 
