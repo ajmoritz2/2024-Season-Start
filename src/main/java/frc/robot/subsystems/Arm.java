@@ -359,7 +359,7 @@ public class Arm implements Subsystem {
                 setWantedState(SystemState.HIGH);
 
             if(m_controller.getR1ButtonPressed())
-                setWantedState(SystemState.HUMAN_FOLD); // hUMAN fOLD
+                setWantedState(SystemState.AUTON_HIGH); // hUMAN fOLD
             if(m_controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
 
