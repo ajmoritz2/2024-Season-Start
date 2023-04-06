@@ -31,6 +31,11 @@ public class Autons {
       new PathConstraints(2.5, 2),
      new PathConstraints(2.5, 1.5));
 
+     private static List<PathPlannerTrajectory> lowCenterBlue = PathPlanner.loadPathGroup("Low Center Blue", new PathConstraints(2.5, 2),
+     new PathConstraints(2.5, 1.5),
+      new PathConstraints(2.5, 2),
+     new PathConstraints(2.5, 1.5));
+
     private static List<PathPlannerTrajectory> clearBlue = PathPlanner.loadPathGroup("Clear Blue", new PathConstraints(2.5, 1.75), new PathConstraints(2.5,1.75), new PathConstraints(2.5,1.75));
 
     private static List<PathPlannerTrajectory> clearRed = PathPlanner.loadPathGroup("Clear Red", new PathConstraints(2.5, 1.75), new PathConstraints(2.5,1.75), new PathConstraints(2.5,1.75));
@@ -129,6 +134,29 @@ public class Autons {
     public static Command center5(Drivetrain driveTrain, Arm arm, Intake intake) {
 
         Command[] fullAuto = TheoryPath.getPathLegs(center, driveTrain);
+
+    
+        return new SequentialCommandGroup(
+                new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
+                new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
+                new WaitCommand(firstWait),
+                new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
+                new WaitCommand(1),
+                new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
+                new WaitCommand(1),
+                new InstantCommand(()-> driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING)),
+                fullAuto[0],
+                fullAuto[1],
+                new ParallelCommandGroup(fullAuto[2], new ArmWantedStateCommand(arm, SystemState.GROUND_ANGLE), new IntakeWantedStateCommand(intake, Intake.WantedState.INTAKING_CUBE)),
+                new ParallelCommandGroup(fullAuto[3], new ArmWantedStateCommand(arm, SystemState.NEUTRAL)),
+                new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
+                new ParallelCommandGroup(new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE)), new SequentialCommandGroup(new ArmWantedStateCommand(arm, SystemState.SHOOT),new WaitCommand(1), new IntakeWantedStateCommand(intake, Intake.WantedState.PLACING)))
+            );
+    }
+
+    public static Command centerLow(Drivetrain driveTrain, Arm arm, Intake intake) {
+
+        Command[] fullAuto = TheoryPath.getPathLegs(lowCenterBlue, driveTrain);
 
     
         return new SequentialCommandGroup(

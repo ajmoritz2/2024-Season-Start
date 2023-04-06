@@ -431,6 +431,7 @@ public class Arm implements Subsystem {
             case SHOOT:
                 configExtend(-19.0);
                 configRotate(24.0);
+                break;
             // case ZERO:
 			// 	//TODO how does this work? 
             //     configRotate(24.0);   //70057/4096
