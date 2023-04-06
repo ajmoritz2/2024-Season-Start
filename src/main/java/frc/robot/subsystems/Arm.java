@@ -61,6 +61,7 @@ public class Arm implements Subsystem {
         AUTON_MID,
         AUTON_HIGH,
         TRANSITION,
+        SHOOT,
         MANUAL
     }
 
@@ -283,6 +284,9 @@ public class Arm implements Subsystem {
             case AUTON_HIGH:
                 newState = handleManual();
                 break;
+            case SHOOT:
+                newState = handleManual();
+                break;
             case  MANUAL:
                 newState = handleManual();
                 break;
@@ -359,7 +363,7 @@ public class Arm implements Subsystem {
                 setWantedState(SystemState.HIGH);
 
             if(m_controller.getR1ButtonPressed())
-                setWantedState(SystemState.AUTON_HIGH); // hUMAN fOLD
+                setWantedState(SystemState.HUMAN_FOLD); // hUMAN fOLD
             if(m_controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
 
@@ -424,6 +428,9 @@ public class Arm implements Subsystem {
                 // configRotateAngle(40);   //TODO: tweak angle
                 configExtend(0);
                 break;
+            case SHOOT:
+                configExtend(-19.0);
+                configRotate(24.0);
             // case ZERO:
 			// 	//TODO how does this work? 
             //     configRotate(24.0);   //70057/4096

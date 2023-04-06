@@ -43,6 +43,8 @@ public class Autons {
         return new InstantCommand(() -> drivetrain.drive(0,0,0,true));
     }
 
+    private static double firstWait = 1.7;
+
     public static Command center1(Drivetrain driveTrain, Arm arm, Intake intake) {
 
         Command[] fullAuto = TheoryPath.getPathLegs(center, driveTrain);
@@ -51,7 +53,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.7),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE))
@@ -66,7 +68,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.7),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
@@ -86,7 +88,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.7),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
@@ -109,7 +111,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.7),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
@@ -132,7 +134,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.7),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
@@ -143,7 +145,7 @@ public class Autons {
                 new ParallelCommandGroup(fullAuto[2], new ArmWantedStateCommand(arm, SystemState.GROUND_ANGLE), new IntakeWantedStateCommand(intake, Intake.WantedState.INTAKING_CUBE)),
                 new ParallelCommandGroup(fullAuto[3], new ArmWantedStateCommand(arm, SystemState.NEUTRAL)),
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
-                new ParallelCommandGroup(new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE)), new SequentialCommandGroup(new ArmWantedStateCommand(arm, SystemState.AUTON_MID),new WaitCommand(1), new IntakeWantedStateCommand(intake, Intake.WantedState.PLACING)))
+                new ParallelCommandGroup(new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE)), new SequentialCommandGroup(new ArmWantedStateCommand(arm, SystemState.SHOOT),new WaitCommand(1), new IntakeWantedStateCommand(intake, Intake.WantedState.PLACING)))
             );
     }
 
@@ -155,7 +157,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL)     
@@ -170,7 +172,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -188,7 +190,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -213,7 +215,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.7),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(.7),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -238,7 +240,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL)     
@@ -252,7 +254,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -269,7 +271,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -293,7 +295,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -318,7 +320,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL)     
@@ -333,7 +335,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -351,7 +353,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -376,7 +378,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -401,7 +403,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL)     
@@ -416,7 +418,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -434,7 +436,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.2),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
@@ -459,7 +461,7 @@ public class Autons {
         return new SequentialCommandGroup(
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
                 new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
-                new WaitCommand(1.7),
+                new WaitCommand(firstWait),
                 new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
                 new WaitCommand(1),
                 new ArmWantedStateCommand(arm, SystemState.NEUTRAL),
