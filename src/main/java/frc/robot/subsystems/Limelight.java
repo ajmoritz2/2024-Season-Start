@@ -11,7 +11,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 
 public class Limelight implements Subsystem {
 
-    private enum SystemState{
+    public static enum SystemState{
         NEUTRAL,
         CONE,
         CUBE
@@ -62,10 +62,10 @@ public class Limelight implements Subsystem {
     @Override
     public void readPeriodicInputs(double timestamp){
         
-        if(controller.getRightBumperPressed())
-            setWantedState(SystemState.CONE);
-        if(controller.getRightBumperReleased())
-            setWantedState(SystemState.NEUTRAL);
+        // if(controller.getRightBumperPressed())
+        //     setWantedState(SystemState.CONE);
+        // if(controller.getRightBumperReleased())
+        //     setWantedState(SystemState.NEUTRAL);
 
         // if (Robot.m_robotContainer.drivetrain.getRightTrigger()){
         //     setWantedState(SystemState.CUBE);

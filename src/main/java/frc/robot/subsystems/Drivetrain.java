@@ -275,7 +275,7 @@ public class Drivetrain implements Subsystem {
                 if (limelightLock)
                     moduleStates = drive(MathUtil.clamp(periodicIO.modifiedJoystickY, -Constants.DRIVE.CRUISING_SPEED,Constants.DRIVE.CRUISING_SPEED),
                         MathUtil.clamp(periodicIO.modifiedJoystickX, -Constants.DRIVE.CRUISING_SPEED,Constants.DRIVE.CRUISING_SPEED), 
-                        periodicIO.modifiedJoystickR, !periodicIO.robotOrientedModifier);
+                        periodicIO.modifiedJoystickR, true);
 
                     break;
             case LOCK_ROTATION:
@@ -531,7 +531,7 @@ public class Drivetrain implements Subsystem {
         
         // SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
         // SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
-        
+        SmartDashboard.putBoolean("NAVX Connected", ahrs.isConnected());
         SmartDashboard.putNumber("Yaw", getYaw().getRadians());
         SmartDashboard.putNumber("Goal Angle", (getYaw().getRadians() - Math.toRadians(yawToLock)));
         SmartDashboard.putNumber("Pitch", pitchAngle);

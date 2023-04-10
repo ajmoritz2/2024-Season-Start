@@ -26,6 +26,8 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 //import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 //import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
+import frc.robot.auton.commands.ArmWantedStateCommand;
+import frc.robot.auton.commands.IntakeWantedStateCommand;
 
 public class Arm implements Subsystem {
 
@@ -62,7 +64,8 @@ public class Arm implements Subsystem {
         AUTON_HIGH,
         TRANSITION,
         SHOOT,
-        MANUAL
+        MANUAL,
+        PUNCH
     }
 
     private SystemState m_currentState = SystemState.NEUTRAL;
@@ -287,6 +290,9 @@ public class Arm implements Subsystem {
             case SHOOT:
                 newState = handleManual();
                 break;
+            case PUNCH:
+                newState = handleManual();
+                break;
             case  MANUAL:
                 newState = handleManual();
                 break;
@@ -362,8 +368,18 @@ public class Arm implements Subsystem {
             if(m_controller.getSquareButtonPressed())
                 setWantedState(SystemState.HIGH);
 
-            if(m_controller.getR1ButtonPressed())
+            if(m_controller.getR1ButtonPressed()){
                 setWantedState(SystemState.HUMAN_FOLD); // hUMAN fOLD
+
+                // new SequentialCommandGroup(new ArmWantedStateCommand(this, SystemState.SHOOT),
+                // new WaitCommand(3),
+                // new IntakeWantedStateCommand(m_intake, Intake.WantedState.INTAKING_CUBE),
+                // new WaitCommand(2),
+                // new IntakeWantedStateCommand(m_intake, Intake.WantedState.SHOOT),
+                // new WaitCommand(1),
+                // new IntakeWantedStateCommand(m_intake, Intake.WantedState.IDLE)
+                // ).schedule();
+            }
             if(m_controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
 
@@ -428,8 +444,12 @@ public class Arm implements Subsystem {
                 // configRotateAngle(40);   //TODO: tweak angle
                 configExtend(0);
                 break;
+            case PUNCH:
+                configExtend(24.0);
+                configRotate(24.0);
+                break;
             case SHOOT:
-                configExtend(-19.0);
+                configExtend(0);
                 configRotate(24.0);
                 break;
             // case ZERO:
@@ -469,6 +489,11 @@ public class Arm implements Subsystem {
     //     }
     // }
 
+    private double percentOutputError(){
+        
+        return (double) (m_rotateMotor.getPosition().getValue() - m_rotateEncoderRotations)/m_rotateEncoderRotations;
+    }
+
     @Override
     public void stop() {
         
@@ -497,6 +522,7 @@ public class Arm implements Subsystem {
         SmartDashboard.putNumber("Arm Ecdr Velocity", m_rotateEncoderVelocity);
         SmartDashboard.putNumber("PDH Voltage", m_PDH.getVoltage());
         SmartDashboard.putNumber("PDH Current", m_PDH.getTotalCurrent());
+        SmartDashboard.putNumber("Arm Error", percentOutputError());
     }
 
     private SystemState handleManual(){

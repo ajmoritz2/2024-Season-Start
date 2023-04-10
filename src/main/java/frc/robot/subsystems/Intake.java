@@ -20,7 +20,8 @@ public class Intake implements Subsystem {
         INTAKING_CONE,
         INTAKING_CUBE,
         IDLE_CUBE,
-        PLACING
+        PLACING,
+        SHOOT
     }
 
     public enum WantedState{
@@ -28,7 +29,8 @@ public class Intake implements Subsystem {
         INTAKING_CONE,
         INTAKING_CUBE,
         IDLE_CUBE,
-        PLACING
+        PLACING,
+        SHOOT
     }
 
     private SystemState currentState = SystemState.IDLE;
@@ -80,6 +82,9 @@ public class Intake implements Subsystem {
             case IDLE_CUBE:
                 newState = handleManual();
                 break;
+            case SHOOT:
+                newState = handleManual();
+                break;
             case IDLE:
                 newState = handleManual();
                 break;
@@ -107,17 +112,17 @@ public class Intake implements Subsystem {
             wantedState = WantedState.IDLE;
 
         if (currentState == SystemState.INTAKING_CONE && m_IntakeStatorCurrent > 200){
-            new SequentialCommandGroup(
-                new WaitCommand(5),
-                new InstantCommand(()-> setWantedState(WantedState.IDLE))
-            );
+            // new SequentialCommandGroup(
+            //     new WaitCommand(5),
+            //     new InstantCommand(()-> setWantedState(WantedState.IDLE))
+            // );
             haveCone = true;
         }
         if (currentState == SystemState.INTAKING_CUBE && m_IntakeStatorCurrent > 100){
-            new SequentialCommandGroup(
-                new WaitCommand(5),
-                new InstantCommand(()-> setWantedState(WantedState.IDLE_CUBE))
-            );
+            // new SequentialCommandGroup(
+            //     new WaitCommand(5),
+            //     new InstantCommand(()-> setWantedState(WantedState.IDLE_CUBE))
+            // );
             haveCube = true;
         }
      
@@ -149,6 +154,9 @@ public class Intake implements Subsystem {
             case IDLE_CUBE:
                 setIntakeSpeed(-.1);
                 break;
+            case SHOOT:
+                setIntakeSpeed(1);
+                break;
             default:
             case IDLE:
                 setIntakeSpeed(0);
@@ -167,6 +175,8 @@ public class Intake implements Subsystem {
                 return SystemState.PLACING;
             case IDLE_CUBE:
                 return SystemState.IDLE_CUBE;
+            case SHOOT:
+                return SystemState.SHOOT;
             default:
             case IDLE:
                 return SystemState.IDLE;

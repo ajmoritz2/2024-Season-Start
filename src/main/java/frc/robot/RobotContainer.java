@@ -102,6 +102,8 @@ public class RobotContainer {
 		autonChooser.addOption("Center3 -Score,Leave,Balance", Autons.center3(drivetrain, arm, intake));
 		autonChooser.addOption("Center4 -Score,Leave,Pickup Cube,Balance", Autons.center4(drivetrain, arm, intake));
 		autonChooser.addOption("Center5 -Score,Leave,Pickup Cube,Balance,Shoot", Autons.center5(drivetrain, arm, intake));
+		autonChooser.addOption("Center No Touch -Score,Leave,Balance", Autons.centerNoTouch(drivetrain, arm, intake));
+
 
 		autonChooser.addOption("ClearBlue1 -Score", Autons.clearBlue1(drivetrain,arm,intake));
 		autonChooser.addOption("ClearBlue2 -Score,Leave", Autons.clearBlue2(drivetrain, arm, intake));

@@ -26,7 +26,12 @@ import frc.robot.subsystems.Intake;
 
 public class Autons {
     
-    private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("Center", new PathConstraints(2.5, 2),
+    private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("CenterReal", new PathConstraints(2.5, 2),
+     new PathConstraints(2.5, 1.5),
+      new PathConstraints(2.5, 2),
+     new PathConstraints(2.5, 1.5));
+
+     private static List<PathPlannerTrajectory> centernotouch = PathPlanner.loadPathGroup("CenterReal", new PathConstraints(2.5, 2),
      new PathConstraints(2.5, 1.5),
       new PathConstraints(2.5, 2),
      new PathConstraints(2.5, 1.5));
@@ -148,9 +153,36 @@ public class Autons {
                 fullAuto[0],
                 fullAuto[1],
                 new ParallelCommandGroup(fullAuto[2], new ArmWantedStateCommand(arm, SystemState.GROUND_ANGLE), new IntakeWantedStateCommand(intake, Intake.WantedState.INTAKING_CUBE)),
-                new ParallelCommandGroup(fullAuto[3], new ArmWantedStateCommand(arm, SystemState.NEUTRAL)),
+                new ParallelCommandGroup(fullAuto[3], new ArmWantedStateCommand(arm, SystemState.MID)),
                 new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
-                new ParallelCommandGroup(new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE)), new SequentialCommandGroup(new ArmWantedStateCommand(arm, SystemState.SHOOT),new WaitCommand(1), new IntakeWantedStateCommand(intake, Intake.WantedState.PLACING)))
+                new ParallelCommandGroup(new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE)), 
+                new SequentialCommandGroup(new WaitCommand(1.75),
+                new IntakeWantedStateCommand(intake, Intake.WantedState.SHOOT)),
+                new SequentialCommandGroup(new WaitCommand(1.0), 
+                new ArmWantedStateCommand(arm, Arm.SystemState.PUNCH)))
+            );
+    }
+
+    public static Command centerNoTouch(Drivetrain driveTrain, Arm arm, Intake intake) {
+
+        Command[] fullAuto = TheoryPath.getPathLegs(centernotouch, driveTrain);
+
+    
+        return new SequentialCommandGroup(
+                new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
+                new ArmWantedStateCommand(arm,SystemState.AUTON_HIGH),
+                new WaitCommand(firstWait),
+                new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.PLACING),
+                new WaitCommand(1),
+                new ParallelCommandGroup(new ArmWantedStateCommand(arm, SystemState.NEUTRAL), new IntakeWantedStateCommand(intake, frc.robot.subsystems.Intake.WantedState.IDLE)),
+                new WaitCommand(1),
+                new InstantCommand(()-> driveTrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING)),
+                fullAuto[0],
+                fullAuto[1],
+                fullAuto[2],
+                fullAuto[3], 
+                new InstantCommand(() -> driveTrain.drive(0, 0, 0, true)),
+                new InstantCommand(() -> driveTrain.setWantedState(Drivetrain.WantedState.AUTO_BALANCE))
             );
     }
 
