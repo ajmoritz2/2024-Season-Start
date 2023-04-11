@@ -173,9 +173,7 @@ public class Drivetrain implements Subsystem {
     public Drivetrain(XboxController controller) {
         ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
         //yawCtrl.enableContinuousInput(-Math.PI, Math.PI);  //TODO check if Pigeon output rolls over 
-
-        
-        
+       
         mSwerveMods = new SwerveModule[] {
         new SwerveModule(0, Constants.Swerve.Mod0.constants),
         new SwerveModule(1, Constants.Swerve.Mod1.constants),
