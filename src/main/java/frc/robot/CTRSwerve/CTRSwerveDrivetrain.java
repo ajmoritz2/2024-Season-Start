@@ -1,8 +1,9 @@
 package frc.robot.CTRSwerve;
 
 import com.ctre.phoenixpro.BaseStatusSignalValue;
-import com.ctre.phoenixpro.controls.ControlRequest;
 import com.ctre.phoenixpro.hardware.Pigeon2;
+import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -12,6 +13,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -19,9 +21,10 @@ public class CTRSwerveDrivetrain {
     private final int ModuleCount;
 
     private CTRSwerveModule[] m_modules;
-    private Pigeon2 m_pigeon2;
-    private SwerveDriveKinematics m_kinematics;
-    private SwerveDriveOdometry m_odometry;
+    // private Pigeon2 m_pigeon2;
+    private AHRS ahrs;
+    public SwerveDriveKinematics m_kinematics;
+    public SwerveDriveOdometry m_odometry;
     private SwerveModulePosition[] m_modulePositions;
     private Translation2d[] m_moduleLocations;
     private OdometryThread m_odometryThread;
@@ -30,14 +33,14 @@ public class CTRSwerveDrivetrain {
 
     /* Perform swerve module updates in a separate thread to minimize latency */
     private class OdometryThread extends Thread {
-        private BaseStatusSignalValue[] m_allSignals;
+        private double[] m_allSignals;
         public int SuccessfulDaqs = 0;
         public int FailedDaqs = 0;
 
         public OdometryThread() {
             super();
             // 4 signals for each module + 2 for Pigeon2
-            m_allSignals = new BaseStatusSignalValue[(ModuleCount * 4) + 2];
+            m_allSignals = new double[(ModuleCount * 4) + 2];
             for (int i = 0; i < ModuleCount; ++i) {
                 var signals = m_modules[i].getSignals();
                 m_allSignals[(i * 4) + 0] = signals[0];
@@ -45,31 +48,37 @@ public class CTRSwerveDrivetrain {
                 m_allSignals[(i * 4) + 2] = signals[2];
                 m_allSignals[(i * 4) + 3] = signals[3];
             }
-            m_allSignals[m_allSignals.length - 2] = m_pigeon2.getYaw();
-            m_allSignals[m_allSignals.length - 1] = m_pigeon2.getAngularVelocityZ();
+            m_allSignals[m_allSignals.length - 2] = (double) ahrs.getYaw();
+            m_allSignals[m_allSignals.length - 1] = ahrs.getRate();
         }
 
         public void run() {
             /* Run as fast as possible, our signals will control the timing */
             while (true) {
                 /* Synchronously wait for all signals in drivetrain */
-                BaseStatusSignalValue.waitForAll(0.1, m_allSignals);
+                // BaseStatusSignalValue.waitForAll(0.1, m_allSignals);
 
-                /* Get status of first element */
-                if (m_allSignals[0].getError().isOK()) {
-                    SuccessfulDaqs++;
-                } else {
-                    FailedDaqs++;
-                }
+                // /* Get status of first element */
+                // if (m_allSignals[0].getError().isOK()) {
+                //     SuccessfulDaqs++;
+                // } else {
+                //     FailedDaqs++;
+                // }
 
                 /* Now update odometry */
+                try {
+                    this.wait(5);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
                 for (int i = 0; i < ModuleCount; ++i) {
                     m_modulePositions[i] = m_modules[i].getPosition();
                 }
                 // Assume Pigeon2 is flat-and-level so latency compensation can be performed
                 double yawDegrees =
-                        BaseStatusSignalValue.getLatencyCompensatedValue(
-                                m_pigeon2.getYaw(), m_pigeon2.getAngularVelocityZ());
+                        getLatencyCompensatedValue(
+                                ahrs.getYaw(), ahrs.getRate());
 
                 m_odometry.update(Rotation2d.fromDegrees(yawDegrees), m_modulePositions);
                 m_field.setRobotPose(m_odometry.getPoseMeters());
@@ -87,8 +96,9 @@ public class CTRSwerveDrivetrain {
             SwerveDriveTrainConstants driveTrainConstants, SwerveModuleConstants... modules) {
         ModuleCount = modules.length;
 
-        m_pigeon2 = new Pigeon2(driveTrainConstants.Pigeon2Id, driveTrainConstants.CANbusName);
-
+        // m_pigeon2 = new Pigeon2(driveTrainConstants.Pigeon2Id, driveTrainConstants.CANbusName);
+        ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
+        
         m_modules = new CTRSwerveModule[ModuleCount];
         m_modulePositions = new SwerveModulePosition[ModuleCount];
         m_moduleLocations = new Translation2d[ModuleCount];
@@ -103,7 +113,7 @@ public class CTRSwerveDrivetrain {
         }
         m_kinematics = new SwerveDriveKinematics(m_moduleLocations);
         m_odometry =
-                new SwerveDriveOdometry(m_kinematics, m_pigeon2.getRotation2d(), getSwervePositions());
+                new SwerveDriveOdometry(m_kinematics, ahrs.getRotation2d(), getSwervePositions());
         m_field = new Field2d();
         SmartDashboard.putData("Field", m_field);
 
@@ -114,7 +124,7 @@ public class CTRSwerveDrivetrain {
         m_odometryThread.start();
     }
 
-    private SwerveModulePosition[] getSwervePositions() {
+    public SwerveModulePosition[] getSwervePositions() {
         return m_modulePositions;
     }
 
@@ -126,7 +136,7 @@ public class CTRSwerveDrivetrain {
     }
 
     public void driveFieldCentric(ChassisSpeeds speeds) {
-        var roboCentric = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, m_pigeon2.getRotation2d());
+        var roboCentric = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, ahrs.getRotation2d());
         var swerveStates = m_kinematics.toSwerveModuleStates(roboCentric);
         for (int i = 0; i < ModuleCount; ++i) {
             m_modules[i].apply(swerveStates[i]);
@@ -134,13 +144,13 @@ public class CTRSwerveDrivetrain {
     }
 
     public void driveFullyFieldCentric(double xSpeeds, double ySpeeds, Rotation2d targetAngle) {
-        var currentAngle = m_pigeon2.getRotation2d();
+        var currentAngle = ahrs.getRotation2d();
         double rotationalSpeed =
                 m_turnPid.calculate(currentAngle.getRadians(), targetAngle.getRadians());
 
         var roboCentric =
                 ChassisSpeeds.fromFieldRelativeSpeeds(
-                        xSpeeds, ySpeeds, rotationalSpeed, m_pigeon2.getRotation2d());
+                        xSpeeds, ySpeeds, rotationalSpeed, ahrs.getRotation2d());
         var swerveStates = m_kinematics.toSwerveModuleStates(roboCentric);
         for (int i = 0; i < ModuleCount; ++i) {
             m_modules[i].apply(swerveStates[i]);
@@ -155,8 +165,16 @@ public class CTRSwerveDrivetrain {
         }
     }
 
+    public  double getLatencyCompensatedValue(double signal, double signalSlope)
+    {
+        double nonCompensatedSignal = signal;
+        double changeInSignal = signalSlope;
+        double latency = ahrs.getLastSensorTimestamp() - System.currentTimeMillis();
+        return nonCompensatedSignal + (changeInSignal * latency);
+    }
+
     public void seedFieldRelative() {
-        m_pigeon2.setYaw(0);
+        ahrs.zeroYaw();
         
     }
 

@@ -27,27 +27,31 @@ import frc.robot.Constants;
 import frc.robot.Robot;
 import frc.robot.RobotContainer;
 import frc.robot.SwerveModule;
+import frc.robot.CTRSwerve.CTRSwerveDrivetrain;
+import frc.robot.CTRSwerve.SwerveDriveTrainConstants;
+import frc.robot.CTRSwerve.SwerveModuleConstants;
 import frc.robot.Constants.*;
 import frc.robot.utils.maths.oneDimensionalLookup;
 
 public class Drivetrain implements Subsystem {
-    
-    /*  DRIVE CONTROLLER SCHEME (PLEASE KEEP UPDATED)
-    * 
+
+    /*
+     * DRIVE CONTROLLER SCHEME (PLEASE KEEP UPDATED)
+     * 
      * MAPPED BUTTONS:
-     *  A -> Auto Balance
-     *  B -> Cruise
-     *  X -> Limelight Cruise
+     * A -> Auto Balance
+     * B -> Cruise
+     * X -> Limelight Cruise
      * 
-     *  RBumper -> Lock to 180 degrees
-     *  LBumper -> Lock to 360 degrees
+     * RBumper -> Lock to 180 degrees
+     * LBumper -> Lock to 360 degrees
      * 
-     *  LAxis -> Drive
-     *  RAxis -> Rotate 
+     * LAxis -> Drive
+     * RAxis -> Rotate
      */
-  
+
     public static final double MAX_VOLTAGE = 11.0;
-  
+
     public static final double MAX_VELOCITY_METERS_PER_SECOND = 5.36;
 
     public static double pitchAngle = 0;
@@ -59,46 +63,43 @@ public class Drivetrain implements Subsystem {
 
     private double lockDir = 180;
     private boolean lockButton = false; // False is Lbumper True is RBumper
- 
+
     public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = Constants.DRIVE.MAX_ROTATE_SPEED_RAD_PER_SEC_EST;
 
     // Actually have no clue what these do. Have too much of a dog brain for this
-    public static final double[] XY_Axis_inputBreakpoints = {-1, -0.85, -0.6, -0.12, 0.12, 0.6, 0.85, 1};
-    public static final double[] XY_Axis_outputTable = {-1.0, -0.6, -0.3, 0, 0, 0.3, 0.6, 1.0};
-    public static final double[] RotAxis_inputBreakpoints = {-1, -0.9, -0.6, -0.12, 0.12, 0.6, 0.9, 1};
-    public static final double[] RotAxis_outputTable = {-1.0, -0.5, -0.2, 0, 0, 0.2, 0.5, 1.0};
+    public static final double[] XY_Axis_inputBreakpoints = { -1, -0.85, -0.6, -0.12, 0.12, 0.6, 0.85, 1 };
+    public static final double[] XY_Axis_outputTable = { -1.0, -0.6, -0.3, 0, 0, 0.3, 0.6, 1.0 };
+    public static final double[] RotAxis_inputBreakpoints = { -1, -0.9, -0.6, -0.12, 0.12, 0.6, 0.9, 1 };
+    public static final double[] RotAxis_outputTable = { -1.0, -0.5, -0.2, 0, 0, 0.2, 0.5, 1.0 };
 
     private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
-        // Front left
-        new Translation2d(Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
-        // Front right
-        new Translation2d(Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0),
-        // Back left
-        new Translation2d(-Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
-        // Back right
-        new Translation2d(-Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0)
-    );
+            // Front left
+            new Translation2d(Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
+            // Front right
+            new Translation2d(Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0),
+            // Back left
+            new Translation2d(-Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
+            // Back right
+            new Translation2d(-Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0));
 
     private final SlewRateLimiter slewX = new SlewRateLimiter(16);
     private final SlewRateLimiter slewY = new SlewRateLimiter(16);
     private final SlewRateLimiter slewRot = new SlewRateLimiter(1880);
 
- 
     private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
     private double gyroOffset;
 
-
-    private enum SystemState{
-        IDLE,   
+    private enum SystemState {
+        IDLE,
         MANUAL_CONTROL,
-        TRAJECTORY_FOLLOWING,           //X,Y axis speeds relative to field
+        TRAJECTORY_FOLLOWING, // X,Y axis speeds relative to field
         AUTO_BALANCE,
         LOCK_ROTATION,
         CRUISE,
         LIMELIGHT_CRUISE
     }
 
-    public enum WantedState{
+    public enum WantedState {
         IDLE,
         MANUAL_CONTROL,
         TRAJECTORY_FOLLOWING,
@@ -112,10 +113,10 @@ public class Drivetrain implements Subsystem {
         // INPUTS
         double timestamp;
 
-        double VxCmd; //longitudinal speed
-        double VyCmd; //lateral speed
-        double WzCmd; //rotational rate in radians/sec
-        boolean robotOrientedModifier; //drive command modifier to set robot oriented translation control
+        double VxCmd; // longitudinal speed
+        double VyCmd; // lateral speed
+        double WzCmd; // rotational rate in radians/sec
+        boolean robotOrientedModifier; // drive command modifier to set robot oriented translation control
 
         double modifiedJoystickX;
         double modifiedJoystickY;
@@ -159,12 +160,14 @@ public class Drivetrain implements Subsystem {
 
     private double[] autoDriveSpeeds = new double[2];
     public final static int Num_Modules = 4;
-    public SwerveModule[] mSwerveMods = new SwerveModule[Num_Modules];   
+    // public SwerveModule[] mSwerveMods = new SwerveModule[Num_Modules];
 
     private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
 
-    private final SwerveDriveOdometry odometry; 
-    
+    private final SwerveDriveOdometry odometry;
+
+    private final CTRSwerveDrivetrain drivetrain;
+
     public SwerveModuleState[] trajectoryStates = new SwerveModuleState[4];
 
     private boolean balancedX = false, balancedY = false;
@@ -172,28 +175,54 @@ public class Drivetrain implements Subsystem {
 
     public Drivetrain(XboxController controller) {
         ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
-        //yawCtrl.enableContinuousInput(-Math.PI, Math.PI);  //TODO check if Pigeon output rolls over 
-       
-        mSwerveMods = new SwerveModule[] {
-        new SwerveModule(0, Constants.Swerve.Mod0.constants),
-        new SwerveModule(1, Constants.Swerve.Mod1.constants),
-        new SwerveModule(2, Constants.Swerve.Mod2.constants),
-        new SwerveModule(3, Constants.Swerve.Mod3.constants)
-        };
-        
+        // yawCtrl.enableContinuousInput(-Math.PI, Math.PI); //TODO check if Pigeon
+        // output rolls over
+
+        drivetrain = new CTRSwerveDrivetrain(new SwerveDriveTrainConstants().withTurnKp(0.125),
+
+                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod0.canCoderID)
+                        .withDriveMotorId(Constants.Swerve.Mod0.driveMotorID)
+                        .withSteerMotorId(Constants.Swerve.Mod0.angleMotorID)
+                        .withCANcoderOffset(Constants.Swerve.Mod0.angleOffset.getRadians())
+                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio),
+
+                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod1.canCoderID)
+                        .withDriveMotorId(Constants.Swerve.Mod1.driveMotorID)
+                        .withSteerMotorId(Constants.Swerve.Mod1.angleMotorID)
+                        .withCANcoderOffset(Constants.Swerve.Mod1.angleOffset.getRadians())
+                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio),
+
+                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod2.canCoderID)
+                        .withDriveMotorId(Constants.Swerve.Mod2.driveMotorID)
+                        .withSteerMotorId(Constants.Swerve.Mod2.angleMotorID)
+                        .withCANcoderOffset(Constants.Swerve.Mod2.angleOffset.getRadians())
+                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio),
+
+                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod3.canCoderID)
+                        .withDriveMotorId(Constants.Swerve.Mod3.driveMotorID)
+                        .withSteerMotorId(Constants.Swerve.Mod3.angleMotorID)
+                        .withCANcoderOffset(Constants.Swerve.Mod3.angleOffset.getRadians())
+                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio)
+
+        );
+
+        // mSwerveMods = new SwerveModule[] {
+        // new SwerveModule(0, Constants.Swerve.Mod0.constants),
+        // new SwerveModule(1, Constants.Swerve.Mod1.constants),
+        // new SwerveModule(2, Constants.Swerve.Mod2.constants),
+        // new SwerveModule(3, Constants.Swerve.Mod3.constants)
+        // };
+
         odometry = new SwerveDriveOdometry(m_kinematics, getYaw(), getModulePositions());
 
         this.controller = controller;
-
-        resetModulesToAbsolute();
-        
 
     }
 
     @Override
     public void processLoop(double timestamp) {
         SystemState newState;
-        switch (currentState){
+        switch (currentState) {
             default:
             case MANUAL_CONTROL:
                 newState = handleManualControl();
@@ -216,100 +245,104 @@ public class Drivetrain implements Subsystem {
             case IDLE:
                 newState = handleManualControl();
                 break;
-      
+
         }
         if (newState != currentState) {
-			currentState = newState;
-			currentStateStartTime = timestamp;
-		}
-        
+            currentState = newState;
+            currentStateStartTime = timestamp;
+        }
+
         updateOdometry();
     }
 
     @Override
     public void readPeriodicInputs(double timestamp) {
 
-        periodicIO.VxCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.VyCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable, controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
-        periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable, controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
+        periodicIO.VxCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable,
+                controller.getLeftY()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.VyCmd = -oneDimensionalLookup.interpLinear(XY_Axis_inputBreakpoints, XY_Axis_outputTable,
+                controller.getLeftX()) * MAX_VELOCITY_METERS_PER_SECOND;
+        periodicIO.WzCmd = -oneDimensionalLookup.interpLinear(RotAxis_inputBreakpoints, RotAxis_outputTable,
+                controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-        periodicIO.modifiedJoystickX = slewX.calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
-        periodicIO.modifiedJoystickY = slewY.calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+        periodicIO.modifiedJoystickX = slewX
+                .calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+        periodicIO.modifiedJoystickY = slewY
+                .calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
 
-        if (limelightLock){
-        periodicIO.modifiedJoystickX =slewX.calculate( MathUtil.clamp(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
-                                                        -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
-        periodicIO.modifiedJoystickY =  slewY.calculate(MathUtil.clamp(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
-                                                            -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
-        } 
-        periodicIO.modifiedJoystickR = slewRot.calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND))*0.75;
-        
-        
+        if (limelightLock) {
+            periodicIO.modifiedJoystickX = slewX
+                    .calculate(MathUtil.clamp(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
+                            -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
+            periodicIO.modifiedJoystickY = slewY
+                    .calculate(MathUtil.clamp(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
+                            -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
+        }
+        periodicIO.modifiedJoystickR = slewRot
+                .calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND)) * 0.75;
 
-        double[] chassisVelocity = chassisSpeedsGetter();
-        periodicIO.chassisVx = chassisVelocity[0];
-        periodicIO.chassisVy = chassisVelocity[1];
-        periodicIO.goalVx = chassisVelocity[2];
-        periodicIO.goalVy = chassisVelocity[3];
-        
         checkButtons();
 
     }
 
     @Override
-    public void writePeriodicOutputs(double timestamp)
-    {
+    public void writePeriodicOutputs(double timestamp) {
         SwerveModuleState[] moduleStates = new SwerveModuleState[4];
-        switch(currentState){
+        switch (currentState) {
             case TRAJECTORY_FOLLOWING:
                 moduleStates = trajectoryStates;
                 break;
             case AUTO_BALANCE:
-                moduleStates = autoBalance();
-                //System.out.println("IN balance");
+                autoBalance();
+                // System.out.println("IN balance");
                 break;
             case LIMELIGHT_CRUISE:
                 if (limelightLock)
-                    moduleStates = drive(MathUtil.clamp(periodicIO.modifiedJoystickY, -Constants.DRIVE.CRUISING_SPEED,Constants.DRIVE.CRUISING_SPEED),
-                        MathUtil.clamp(periodicIO.modifiedJoystickX, -Constants.DRIVE.CRUISING_SPEED,Constants.DRIVE.CRUISING_SPEED), 
-                        periodicIO.modifiedJoystickR, true);
+                    drive(
+                            MathUtil.clamp(periodicIO.modifiedJoystickY, -Constants.DRIVE.CRUISING_SPEED,
+                                    Constants.DRIVE.CRUISING_SPEED),
+                            MathUtil.clamp(periodicIO.modifiedJoystickX, -Constants.DRIVE.CRUISING_SPEED,
+                                    Constants.DRIVE.CRUISING_SPEED),
+                            periodicIO.modifiedJoystickR, true);
 
-                    break;
+                break;
             case LOCK_ROTATION:
-                if(lockButton)
-                    moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctRightRotation(lockDir), true);
+                if (lockButton)
+                    drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
+                            correctRightRotation(lockDir), true);
                 else
-                    moduleStates = drive(periodicIO.modifiedJoystickY,periodicIO.modifiedJoystickX, correctLeftRotation(lockDir), true);
+                    drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
+                            correctLeftRotation(lockDir), true);
 
                 break;
             case CRUISE:
-                moduleStates = drive(Constants.DRIVE.CRUISING_SPEED, 0, periodicIO.modifiedJoystickR, false);
+                drive(Constants.DRIVE.CRUISING_SPEED, 0, periodicIO.modifiedJoystickR, false);
                 break;
             case MANUAL_CONTROL:
-                moduleStates = drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX, periodicIO.modifiedJoystickR, true);
+                    drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
+                        periodicIO.modifiedJoystickR, true);
                 break;
             default:
             case IDLE:
-                moduleStates = drive(0.0, 0.0, 0.0, true);
+                drive(0.0, 0.0, 0.0, true);
                 break;
 
         }
 
-
-        setModuleStates(moduleStates);
         updateStateVariables(moduleStates);
     }
 
-    
     private SystemState defaultStateChange() {
-		switch (wantedState){
-            /*case IDLE:
-                return SystemState.IDLE;*/
+        switch (wantedState) {
+            /*
+             * case IDLE:
+             * return SystemState.IDLE;
+             */
             case AUTO_BALANCE:
                 return SystemState.AUTO_BALANCE;
             case TRAJECTORY_FOLLOWING:
-				return SystemState.TRAJECTORY_FOLLOWING;
+                return SystemState.TRAJECTORY_FOLLOWING;
             default:
             case MANUAL_CONTROL:
                 return SystemState.MANUAL_CONTROL;
@@ -319,26 +352,25 @@ public class Drivetrain implements Subsystem {
                 return SystemState.CRUISE;
             case LIMELIGHT_CRUISE:
                 return SystemState.LIMELIGHT_CRUISE;
-		}
-	}
+        }
+    }
 
     @Override
     public void periodic() {
-        
+
     }
 
-    private void checkButtons(){
-        if(controller.getAButtonPressed())
+    private void checkButtons() {
+        if (controller.getAButtonPressed())
             setWantedState(WantedState.AUTO_BALANCE);
-        if(controller.getAButtonReleased())
+        if (controller.getAButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
-        
+
         pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
 
-        
-        if (Math.abs(pitchAngle) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && balancedX){
+        if (Math.abs(pitchAngle) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && balancedX) {
             balancedX = false;
-        } else if (!balancedX && Math.abs(pitchAngle) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)){
+        } else if (!balancedX && Math.abs(pitchAngle) <= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES)) {
             balancedX = true;
         }
 
@@ -347,91 +379,89 @@ public class Drivetrain implements Subsystem {
         else
             limelightLock = false;
 
-        if (getLeftTrigger()){
+        if (getLeftTrigger()) {
             setWantedState(WantedState.LOCK_ROTATION);
             lockDir = 180;
             lockButton = true;
-        } else if (controller.getLeftBumper()){
+        } else if (controller.getLeftBumper()) {
             setWantedState(WantedState.LOCK_ROTATION);
             lockDir = 360;
             lockButton = false;
-        }else if (currentState == SystemState.LOCK_ROTATION){
+        } else if (currentState == SystemState.LOCK_ROTATION) {
             setWantedState(WantedState.MANUAL_CONTROL);
         }
     }
 
-    /** 
+    /**
      * Need to test this function
      * 
      * @param goal the goal angle
-     *  @return whether the stuff works
+     * @return whether the stuff works
      */
     private double correctAllRotation(double goal) {
         double steeringAdjust = 0;
         double heading_error = (getYaw().getRadians() - Math.toRadians(goal));
         final double Kp = 0.0001;
         final double min_command = 1;
-    
-        if(Math.abs(heading_error)>0.04){
-            if(heading_error<lockToPi(Math.toRadians(goal) + Math.PI*2))
-              steeringAdjust = heading_error*Kp + min_command; // positive
+
+        if (Math.abs(heading_error) > 0.04) {
+            if (heading_error < lockToPi(Math.toRadians(goal) + Math.PI * 2))
+                steeringAdjust = heading_error * Kp + min_command; // positive
             else
-              steeringAdjust = -(heading_error*Kp) - min_command; // negative
+                steeringAdjust = -(heading_error * Kp) - min_command; // negative
         } else {
             steeringAdjust = 0;
         }
-        return steeringAdjust*2;
+        return steeringAdjust * 2;
     }
 
-    private double lockToPi(double value){
-        return ((value >= Math.PI*2)) ? value-(Math.PI*2) : value;
+    private double lockToPi(double value) {
+        return ((value >= Math.PI * 2)) ? value - (Math.PI * 2) : value;
     }
 
-    private double correctRightRotation(double goal){
+    private double correctRightRotation(double goal) {
         double steeringAdjust = 0;
-        final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
+        final double heading_error = (getYaw().getRadians() - Math.toRadians(goal));
         final double Kp = 0.000001;
         final double min_command = 1;
 
         double correctedError = heading_error - Math.PI;
-    
-        if(Math.abs(heading_error)>0.1){
-            if(heading_error>Math.PI)
-              steeringAdjust = Kp*correctedError + min_command; //positive
+
+        if (Math.abs(heading_error) > 0.1) {
+            if (heading_error > Math.PI)
+                steeringAdjust = Kp * correctedError + min_command; // positive
             else
-              steeringAdjust = Kp*correctedError - min_command; //negative TEST THIS ONE FIRST!!!
+                steeringAdjust = Kp * correctedError - min_command; // negative TEST THIS ONE FIRST!!!
         } else {
             steeringAdjust = 0;
         }
-        return steeringAdjust*2;
+        return steeringAdjust * 2;
     }
 
-    private double correctLeftRotation(double goal){
+    private double correctLeftRotation(double goal) {
         double steeringAdjust = 0;
-        final double heading_error = (getYaw().getRadians()- Math.toRadians(goal));
+        final double heading_error = (getYaw().getRadians() - Math.toRadians(goal));
         final double Kp = 0.00001;
         final double min_command = 1;
-    
-        if(Math.abs(heading_error)>0.1){
-            if(heading_error<0)
-              steeringAdjust = heading_error*Kp + min_command; // positive
+
+        if (Math.abs(heading_error) > 0.1) {
+            if (heading_error < 0)
+                steeringAdjust = heading_error * Kp + min_command; // positive
             else
-              steeringAdjust = heading_error*Kp - min_command; // negative
+                steeringAdjust = heading_error * Kp - min_command; // negative
         } else {
             steeringAdjust = 0;
         }
-        return steeringAdjust*2;
+        return steeringAdjust * 2;
     }
 
-    private double halfWhenCrawl(double val){
-        return (crawling) ? val/2 : val;
+    private double halfWhenCrawl(double val) {
+        return (crawling) ? val / 2 : val;
     }
 
-    private SwerveModuleState[] autoBalance(){
+    private void autoBalance() {
         // TODO: Cap the angles given so we never calculate above a certain value.
-        double xAxisRate = 0;         
-        
-
+        double xAxisRate = 0;
 
         if (!balancedX && pitchAngle > 0) {
 
@@ -442,26 +472,14 @@ public class Drivetrain implements Subsystem {
         if (!balancedX && pitchAngle < 0) {
 
             double pitchAngleRadians = pitchAngle * (Math.PI / 180.0);
-            xAxisRate =  Math.min(4, Math.abs(Math.sin(pitchAngleRadians))*-0.3);
+            xAxisRate = Math.min(4, Math.abs(Math.sin(pitchAngleRadians)) * -0.3);
         }
 
-        return drive(xAxisRate*Constants.BALANCEDMAXSPEED, 0, 0.0, true);
- 
-        
+        drive(xAxisRate * Constants.BALANCEDMAXSPEED, 0, 0.0, true);
+
     }
 
-    private double[] chassisSpeedsGetter(){
-        double[] speeds = new double[4];
-        int i = 0;
-        for (SwerveModule m : mSwerveMods){
-            speeds[i] = m.getState().speedMetersPerSecond;
-            i++;
-        }
-        return speeds;
-    }
-
-    private void updateStateVariables(SwerveModuleState[] states)
-    {
+    private void updateStateVariables(SwerveModuleState[] states) {
         stateVariables.frontLeftDriveLast = states[0].speedMetersPerSecond;
         stateVariables.frontRightDriveLast = states[1].speedMetersPerSecond;
         stateVariables.rearLeftDriveLast = states[2].speedMetersPerSecond;
@@ -474,14 +492,14 @@ public class Drivetrain implements Subsystem {
     }
 
     @Override
-    public void zeroSensors(){
+    public void zeroSensors() {
         resetOdometry();
-        setModuleStates(drive(0.0, 0.0, 0.0, true));
+        drivetrain.driveFullyFieldCentric(0, 0, getYaw());
     }
 
     @Override
-    public void stop(){
-        setModuleStates(drive(0.0, 0.0, 0.0, true));
+    public void stop() {
+        drivetrain.driveFullyFieldCentric(0, 0, getYaw());
     }
 
     @Override
@@ -489,17 +507,17 @@ public class Drivetrain implements Subsystem {
         return "Drivetrain";
     }
 
-    public boolean getLeftTrigger(){
+    public boolean getLeftTrigger() {
         return (controller.getRawAxis(2) == 1) ? true : false;
     }
 
-    public boolean getRightTrigger(){
+    public boolean getRightTrigger() {
         return (controller.getRawAxis(3) == 1) ? true : false;
     }
 
     @Override
     public void outputTelemetry(double timestamp) {
-        
+
         // SmartDashboard.putString("drivetrain/currentState", currentState.toString());
         // SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
         // SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);
@@ -517,153 +535,140 @@ public class Drivetrain implements Subsystem {
         // SmartDashboard.putNumber("driverController/LeftY", controller.getLeftY());
         // SmartDashboard.putNumber("driverController/LeftX", controller.getLeftX());
         // SmartDashboard.putNumber("driverController/RightX", controller.getRightX());
-        // SmartDashboard.putString("drivetrain/currentStateOutputs", currentState.toString());
-        // SmartDashboard.putString("drivetrain/wantedStateOutputs", wantedState.toString());
-        // SmartDashboard.putNumber("drivetrain/goalLimelightAngleError", periodicIO.limelightAngleError);
+        // SmartDashboard.putString("drivetrain/currentStateOutputs",
+        // currentState.toString());
+        // SmartDashboard.putString("drivetrain/wantedStateOutputs",
+        // wantedState.toString());
+        // SmartDashboard.putNumber("drivetrain/goalLimelightAngleError",
+        // periodicIO.limelightAngleError);
         // SmartDashboard.putNumber("drivetrain/yawAngle", periodicIO.adjustedYaw);
         // SmartDashboard.putString("drivetrain/pose", getPose().toString());
         // SmartDashboard.putNumber("drivetrain/chassisVx", periodicIO.chassisVx);
         // SmartDashboard.putNumber("drivetrain/chassisVy", periodicIO.chassisVy);
         // SmartDashboard.putNumber("drivetrain/goalVx", periodicIO.goalVx);
         // SmartDashboard.putNumber("drivetrain/goalVy", periodicIO.goalVy);
-        
-        // SmartDashboard.putNumber("PosX", odometry.getPoseMeters().getTranslation().getX());
-        // SmartDashboard.putNumber("PosY", odometry.getPoseMeters().getTranslation().getY());
+
+        // SmartDashboard.putNumber("PosX",
+        // odometry.getPoseMeters().getTranslation().getX());
+        // SmartDashboard.putNumber("PosY",
+        // odometry.getPoseMeters().getTranslation().getY());
         SmartDashboard.putBoolean("NAVX Connected", ahrs.isConnected());
         SmartDashboard.putNumber("Yaw", getYaw().getRadians());
         SmartDashboard.putNumber("Goal Angle", (getYaw().getRadians() - Math.toRadians(yawToLock)));
         SmartDashboard.putNumber("Pitch", pitchAngle);
-        SmartDashboard.putNumber("Goal switch",         lockToPi(Math.toRadians(yawToLock) + Math.PI*2)
-        );
+        SmartDashboard.putNumber("Goal switch", lockToPi(Math.toRadians(yawToLock) + Math.PI * 2));
 
-        for(SwerveModule mod : mSwerveMods){
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);    
-        }
-        
     }
 
-    public void setWantedState(WantedState wantedState)
-    {
+    public void setWantedState(WantedState wantedState) {
         this.wantedState = wantedState;
     }
 
-    public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state){
+    public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state) {
         zeroGyroscope();
-        //ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(), 100);
-        odometry.resetPosition(getYaw(), getModulePositions(), new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
+        // ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(),
+        // 100);
+        drivetrain.m_odometry.resetPosition(getYaw(), getModulePositions(),
+                new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
     }
 
     public void zeroGyroscope() {
         ahrs.zeroYaw();
-    
+
         gyroOffset = 0;
     }
 
     public void setModuleStates(SwerveModuleState[] desiredStates) {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.maxSpeed);
-        
-        for(SwerveModule mod : mSwerveMods){
-            mod.setDesiredState(desiredStates[mod.moduleNumber], false);
-        }
-    } 
+        ChassisSpeeds chassis = new SwerveDriveKinematics().toChassisSpeeds(desiredStates[0], desiredStates[1], desiredStates[2], desiredStates[3]
+        );
+        drivetrain.driveFieldCentric(chassis);
+    }
 
-    public void setModuleStatesFromTrajectory(SwerveModuleState[] states){
+    public void setModuleStatesFromTrajectory(SwerveModuleState[] states) {
         trajectoryStates = states;
     }
-    
-    private SystemState handleManualControl(){
+
+    private SystemState handleManualControl() {
 
         return defaultStateChange();
     }
 
-    private SystemState handleTrajectoryFollowing(){
+    private SystemState handleTrajectoryFollowing() {
         return defaultStateChange();
     }
 
-    private boolean checkNoDriveInput(){
-        return(Math.abs(periodicIO.VxCmd) < Constants.DEADBAND
+    private boolean checkNoDriveInput() {
+        return (Math.abs(periodicIO.VxCmd) < Constants.DEADBAND
                 && Math.abs(periodicIO.VyCmd) < Constants.DEADBAND
                 && Math.abs(periodicIO.WzCmd) < Constants.DEADBAND);
     }
 
     public Pose2d getPose() {
-        return odometry.getPoseMeters();
-    }
-    public void resetPose(Pose2d odo){
-        odometry.resetPosition(getYaw(), getModulePositions(), odo);;
+        return drivetrain.getPoseMeters();
     }
 
-
-    private void updateOdometry(){
-        odometry.update(getYaw(), getModulePositions());  
+    public void resetPose(Pose2d odo) {
+        drivetrain.
+        m_odometry.resetPosition(getYaw(), getModulePositions(), odo);
+        
     }
 
-    public void resetOdometry(){
+    private void updateOdometry() {
+        odometry.update(getYaw(), getModulePositions());
+    }
+
+    public void resetOdometry() {
         zeroGyroscope();
-        odometry.resetPosition(getYaw(), getModulePositions(), new Pose2d(0,0, new Rotation2d()));;
+        odometry.resetPosition(getYaw(), getModulePositions(), new Pose2d(0, 0, new Rotation2d()));
+        ;
     }
 
     public SwerveDriveKinematics getKinematics() {
-        return m_kinematics;
+        return drivetrain.m_kinematics;
     }
 
-    public void setAutoDriveSpeeds(double xSpeed, double ySpeed){
+    public void setAutoDriveSpeeds(double xSpeed, double ySpeed) {
         autoDriveSpeeds[0] = xSpeed;
         autoDriveSpeeds[1] = ySpeed;
     }
 
-    public SwerveModuleState[] getModuleStates(){
-        SwerveModuleState[] states = new SwerveModuleState[4];
-        for(SwerveModule mod : mSwerveMods){
-            states[mod.moduleNumber] = mod.getState();
-        }
-        return states;
+    public SwerveModulePosition[] getModulePositions() {
+
+        return drivetrain.getSwervePositions();
     }
 
-    public SwerveModulePosition[] getModulePositions(){
-        SwerveModulePosition[] positions = new SwerveModulePosition[4];
-        for(int i = 0; i<4; i++){
-            positions[i] = mSwerveMods[i].getPosition();
-        }
-        return positions;
-    }
 
-    public void resetModulesToAbsolute(){
-        for(SwerveModule mod : mSwerveMods){
-            mod.resetToAbsolute();
-        }
+    public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
+        // chassisSpeeds = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getYaw())
+        //         : new ChassisSpeeds(xSpeed, ySpeed, rot);
+        // SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(chassisSpeeds);
+        // SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_VELOCITY_METERS_PER_SECOND);
+        // for (SwerveModule mod : mSwerveMods) {
+        //     mod.setDesiredState(states[mod.moduleNumber], true);
+        // }
+        // return states;
+        drivetrain.driveFieldCentric(new ChassisSpeeds(xSpeed, ySpeed, rot));
     }
-
-    public SwerveModuleState[] drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
-        chassisSpeeds = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getYaw())
-        : new ChassisSpeeds(xSpeed, ySpeed, rot);
-        SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(chassisSpeeds);
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_VELOCITY_METERS_PER_SECOND);
-        for(SwerveModule mod : mSwerveMods){
-            mod.setDesiredState(states[mod.moduleNumber], true);
-        }
-        return states;
-    }
- 
 
     public Rotation2d getYaw() {
         if (ahrs.isMagnetometerCalibrated()) {
             // We will only get valid fused headings if the magnetometer is calibrated
             return Rotation2d.fromDegrees(ahrs.getFusedHeading());
-          }
-       //
-       //    // We have to invert the angle of the NavX so that rotating the robot counter-clockwise makes the angle increase.
-       
-          return Rotation2d.fromDegrees(360.0 - ahrs.getYaw());
+        }
+        //
+        // // We have to invert the angle of the NavX so that rotating the robot
+        // counter-clockwise makes the angle increase.
+
+        return Rotation2d.fromDegrees(360.0 - ahrs.getYaw());
     }
 
     public double getPitch() {
         //
-        //    // We have to invert the angle of the NavX so that rotating the robot counter-clockwise makes the angle increase.
-           return ahrs.getPitch();
-     }
+        // // We have to invert the angle of the NavX so that rotating the robot
+        // counter-clockwise makes the angle increase.
+        return ahrs.getPitch();
+    }
 
     @Override
     public boolean checkSystem() {
