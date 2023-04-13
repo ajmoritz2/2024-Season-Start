@@ -116,8 +116,7 @@ public class CTRSwerveModule {
         m_driveMotor.setControl(m_velocitySetter.withVelocity(velocityToSet));
     }
 
-    double[] getSignals() {
-        double[] signals = {m_drivePosition.getValue(), m_driveVelocity.getValue(), m_steerPosition.getValue(), m_steerVelocity.getValue()};
-        return signals;
+    BaseStatusSignalValue[] getSignals() {
+        return m_signals;
     }
 }
