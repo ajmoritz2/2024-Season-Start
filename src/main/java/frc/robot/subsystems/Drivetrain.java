@@ -177,8 +177,8 @@ public class Drivetrain implements Subsystem {
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
                         .withSlipCurrent(14)
-                        .withLocationY(0.260)
-                        .withLocationX(-0.222),
+                        .withLocationX(0.260)
+                        .withLocationY(0.222),
 
                 new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod1.canCoderID)
                         .withDriveMotorId(Constants.Swerve.Mod1.driveMotorID)
@@ -190,8 +190,8 @@ public class Drivetrain implements Subsystem {
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
                         .withSlipCurrent(14)
-                        .withLocationY(0.260)
-                        .withLocationX(0.222),
+                        .withLocationX(0.260)
+                        .withLocationY(-0.222),
 
                 new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod2.canCoderID)
                         .withDriveMotorId(Constants.Swerve.Mod2.driveMotorID)
@@ -203,8 +203,8 @@ public class Drivetrain implements Subsystem {
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
                         .withSlipCurrent(14)
-                        .withLocationY(-0.260)
-                        .withLocationX(-0.222),
+                        .withLocationX(-0.260)
+                        .withLocationY(0.222),
 
                 new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod3.canCoderID)
                         .withDriveMotorId(Constants.Swerve.Mod3.driveMotorID)
@@ -217,7 +217,7 @@ public class Drivetrain implements Subsystem {
                         .withDriveMotorGains(driveGains)
                         .withSlipCurrent(14)
                         .withLocationY(-0.260)
-                        .withLocationX(0.222) );
+                        .withLocationX(-0.222) );
 
         // mSwerveMods = new SwerveModule[] {
         // new SwerveModule(0, Constants.Swerve.Mod0.constants),
