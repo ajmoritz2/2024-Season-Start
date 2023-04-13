@@ -137,19 +137,7 @@ public class Drivetrain implements Subsystem {
         SwerveModuleState[] swerveStatesOut;
     }
 
-    private static class StateVariables {
-        double frontLeftDriveLast;
-        double frontLeftAngleLast;
-        double frontRightDriveLast;
-        double frontRightAngleLast;
-        double rearLeftDriveLast;
-        double rearLeftAngleLast;
-        double rearRightDriveLast;
-        double rearRightAngleLast;
-    }
-
     private final PeriodicIO periodicIO = new PeriodicIO();
-    private final StateVariables stateVariables = new StateVariables();
 
     private SystemState currentState = SystemState.MANUAL_CONTROL;
     private WantedState wantedState = WantedState.MANUAL_CONTROL;
@@ -288,10 +276,10 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void writePeriodicOutputs(double timestamp) {
-        SwerveModuleState[] moduleStates = new SwerveModuleState[4];
+        // SwerveModuleState[] moduleStates = new SwerveModuleState[4];
         switch (currentState) {
             case TRAJECTORY_FOLLOWING:
-                moduleStates = trajectoryStates;
+                drivetrain.driveFieldCentric(m_kinematics.toChassisSpeeds(trajectoryStates));
                 break;
             case AUTO_BALANCE:
                 autoBalance();
@@ -330,7 +318,7 @@ public class Drivetrain implements Subsystem {
 
         }
 
-        updateStateVariables(moduleStates);
+        // updateStateVariables(moduleStates);
     }
 
     private SystemState defaultStateChange() {
@@ -390,29 +378,6 @@ public class Drivetrain implements Subsystem {
         } else if (currentState == SystemState.LOCK_ROTATION) {
             setWantedState(WantedState.MANUAL_CONTROL);
         }
-    }
-
-    /**
-     * Need to test this function
-     * 
-     * @param goal the goal angle
-     * @return whether the stuff works
-     */
-    private double correctAllRotation(double goal) {
-        double steeringAdjust = 0;
-        double heading_error = (getYaw().getRadians() - Math.toRadians(goal));
-        final double Kp = 0.0001;
-        final double min_command = 1;
-
-        if (Math.abs(heading_error) > 0.04) {
-            if (heading_error < lockToPi(Math.toRadians(goal) + Math.PI * 2))
-                steeringAdjust = heading_error * Kp + min_command; // positive
-            else
-                steeringAdjust = -(heading_error * Kp) - min_command; // negative
-        } else {
-            steeringAdjust = 0;
-        }
-        return steeringAdjust * 2;
     }
 
     private double lockToPi(double value) {
@@ -477,18 +442,6 @@ public class Drivetrain implements Subsystem {
 
         drive(xAxisRate * Constants.BALANCEDMAXSPEED, 0, 0.0, true);
 
-    }
-
-    private void updateStateVariables(SwerveModuleState[] states) {
-        stateVariables.frontLeftDriveLast = states[0].speedMetersPerSecond;
-        stateVariables.frontRightDriveLast = states[1].speedMetersPerSecond;
-        stateVariables.rearLeftDriveLast = states[2].speedMetersPerSecond;
-        stateVariables.rearRightDriveLast = states[3].speedMetersPerSecond;
-
-        stateVariables.frontLeftAngleLast = states[0].angle.getRadians();
-        stateVariables.frontRightAngleLast = states[1].angle.getRadians();
-        stateVariables.rearLeftAngleLast = states[2].angle.getRadians();
-        stateVariables.rearRightAngleLast = states[3].angle.getRadians();
     }
 
     @Override
