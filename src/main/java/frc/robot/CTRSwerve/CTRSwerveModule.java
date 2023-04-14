@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class CTRSwerveModule {
     private TalonFX m_driveMotor;
@@ -98,6 +99,9 @@ public class CTRSwerveModule {
         double angle_rot =
                 m_steerPosition.getValue()
                         + (m_steerVelocity.getValue() * m_steerPosition.getTimestamp().getLatency());
+
+        SmartDashboard.putNumber("Motor angle" + m_steerMotor.getDeviceID(), m_steerPosition.getValue());
+
 
         /* And push them into a SwerveModuleState object to return */
         m_internalState.distanceMeters = drive_rot / m_driveRotationsPerMeter;
