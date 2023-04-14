@@ -165,7 +165,7 @@ public class Drivetrain implements Subsystem {
             driveGains.kP = 1;
         }
 
-        drivetrain = new CTRSwerveDrivetrain(new SwerveDriveTrainConstants().withTurnKp(Constants.Swerve.angleKP),
+        drivetrain = new CTRSwerveDrivetrain(new SwerveDriveTrainConstants().withTurnKp(Constants.Swerve.angleKP).withPigeon2Id(50).withCANbusName("SWERVEbus"),
 
                 new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod0.canCoderID)
                         .withDriveMotorId(Constants.Swerve.Mod0.driveMotorID)
