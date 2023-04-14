@@ -178,7 +178,8 @@ public class Drivetrain implements Subsystem {
                         .withDriveMotorGains(driveGains)
                         .withSlipCurrent(14)
                         .withLocationX(0.260)
-                        .withLocationY(0.222),
+                        .withLocationY(0.222)
+                        ,
 
                 new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod1.canCoderID)
                         .withDriveMotorId(Constants.Swerve.Mod1.driveMotorID)
@@ -279,16 +280,16 @@ public class Drivetrain implements Subsystem {
                 controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-        periodicIO.modifiedJoystickX = slewX
+        periodicIO.modifiedJoystickX =- slewX
                 .calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
-        periodicIO.modifiedJoystickY = slewY
+        periodicIO.modifiedJoystickY = -slewY
                 .calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
 
         if (limelightLock) {
             periodicIO.modifiedJoystickX = slewX
                     .calculate(MathUtil.clamp(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
                             -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
-            periodicIO.modifiedJoystickY = slewY
+            periodicIO.modifiedJoystickY = -slewY
                     .calculate(MathUtil.clamp(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
                             -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
         }

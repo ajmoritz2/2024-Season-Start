@@ -520,7 +520,7 @@ public class Arm implements Subsystem {
         SmartDashboard.putNumber("Arm Ecdr Angle", m_rotateEncoderAngle);
         SmartDashboard.putNumber("Arm Ecdr Rot", m_rotateEncoderRotations);
         SmartDashboard.putNumber("Arm Ecdr Velocity", m_rotateEncoderVelocity);
-        SmartDashboard.putNumber("PDH Voltage", m_PDH.getVoltage());
+        // SmartDashboard.putNumber("PDH Voltage", m_PDH.getVoltage());
         SmartDashboard.putNumber("PDH Current", m_PDH.getTotalCurrent());
         SmartDashboard.putNumber("Arm Error", percentOutputError());
     }
