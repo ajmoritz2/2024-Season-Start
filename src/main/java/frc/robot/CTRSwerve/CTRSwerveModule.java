@@ -115,7 +115,8 @@ public class CTRSwerveModule {
         double angleToSetDeg = optimized.angle.getRotations();
         m_steerMotor.setControl(m_angleSetter.withPosition(angleToSetDeg));
         double velocityToSet = optimized.speedMetersPerSecond * m_driveRotationsPerMeter;
-        m_driveMotor.setControl(m_velocitySetter.withVelocity(velocityToSet));
+        SmartDashboard.putNumber("Module " + m_steerMotor.getDeviceID() + " Speed", velocityToSet);
+        m_driveMotor.setControl(m_velocitySetter.withVelocity(-velocityToSet));
     }
 
     BaseStatusSignalValue[] getSignals() {

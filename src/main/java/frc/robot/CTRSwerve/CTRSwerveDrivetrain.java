@@ -2,6 +2,7 @@ package frc.robot.CTRSwerve;
 
 import com.ctre.phoenixpro.BaseStatusSignalValue;
 import com.ctre.phoenixpro.hardware.Pigeon2;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,14 +14,23 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Constants;
 
 public class CTRSwerveDrivetrain {
     private final int ModuleCount;
 
     private CTRSwerveModule[] m_modules;
     private Pigeon2 m_pigeon2;
-    public SwerveDriveKinematics m_kinematics;
-    public SwerveDriveOdometry m_odometry;
+    public final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
+            // Front left
+            new Translation2d(Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
+            // Front right
+            new Translation2d(Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0),
+            // Back left
+            new Translation2d(-Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
+            // Back right
+            new Translation2d(-Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0));   
+             public SwerveDriveOdometry m_odometry;
     private SwerveModulePosition[] m_modulePositions;
     private Translation2d[] m_moduleLocations;
     private OdometryThread m_odometryThread;
@@ -100,7 +110,6 @@ public class CTRSwerveDrivetrain {
 
             iteration++;
         }
-        m_kinematics = new SwerveDriveKinematics(m_moduleLocations);
         m_odometry =
                 new SwerveDriveOdometry(m_kinematics, m_pigeon2.getRotation2d(), getSwervePositions());
         m_field = new Field2d();
@@ -125,6 +134,7 @@ public class CTRSwerveDrivetrain {
     }
 
     public void autonDrive(SwerveModuleState[] states) {
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, Constants.Swerve.maxSpeed);
         for (int i = 0; i < ModuleCount; ++i) {
             m_modules[i].apply(states[i]);
         }
@@ -165,7 +175,7 @@ public class CTRSwerveDrivetrain {
     }
 
     public void seedFieldRelative() {
-        m_pigeon2.setYaw(180);
+        m_pigeon2.setYaw(0);
     }
 
     public Pose2d getPoseMeters() {

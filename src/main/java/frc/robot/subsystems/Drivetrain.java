@@ -162,7 +162,7 @@ public class Drivetrain implements Subsystem {
         {
             steerGains.kP = 30;
             steerGains.kD = 0.2;
-            driveGains.kP = 1;
+            driveGains.kP = 2;
         }
 
         drivetrain = new CTRSwerveDrivetrain(new SwerveDriveTrainConstants().withTurnKp(Constants.Swerve.angleKP).withPigeon2Id(50).withCANbusName("SWERVEbus"),
@@ -176,7 +176,7 @@ public class Drivetrain implements Subsystem {
                         .withWheelRadius(2)
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(400)
+                        .withSlipCurrent(3200)
                         .withLocationX(0.260)
                         .withLocationY(0.222)
                         ,
@@ -190,7 +190,7 @@ public class Drivetrain implements Subsystem {
                         .withWheelRadius(2)
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(400)
+                        .withSlipCurrent(3200)
                         .withLocationX(0.260)
                         .withLocationY(-0.222),
 
@@ -203,7 +203,7 @@ public class Drivetrain implements Subsystem {
                         .withWheelRadius(2)
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(400)
+                        .withSlipCurrent(3200)
                         .withLocationX(-0.260)
                         .withLocationY(0.222),
 
@@ -216,7 +216,7 @@ public class Drivetrain implements Subsystem {
                         .withWheelRadius(2)
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(400)
+                        .withSlipCurrent(3200)
                         .withLocationY(-0.260)
                         .withLocationX(-0.222) );
 
@@ -285,8 +285,8 @@ public class Drivetrain implements Subsystem {
         // periodicIO.modifiedJoystickY = -slewY
         //         .calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
 
-        periodicIO.modifiedJoystickX = -controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
-        periodicIO.modifiedJoystickY = -controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
+        periodicIO.modifiedJoystickX = controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
+        periodicIO.modifiedJoystickY = controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
 
         if (limelightLock) {
             periodicIO.modifiedJoystickX = slewX
@@ -309,9 +309,7 @@ public class Drivetrain implements Subsystem {
         
         switch (currentState) {
             case TRAJECTORY_FOLLOWING:
-                SwerveDriveKinematics.desaturateWheelSpeeds(trajectoryStates, Constants.Swerve.maxSpeed);
-                chassis = drivetrain.m_kinematics.toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
-                );
+                drivetrain.autonDrive(trajectoryStates);
                 break;
             case AUTO_BALANCE:
                 autoBalance();
@@ -353,8 +351,8 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putNumber("Drivetrain/Chassis X", chassis.vxMetersPerSecond);
         SmartDashboard.putNumber("Drivetrain/Chassis Y", chassis.vyMetersPerSecond);
         SmartDashboard.putNumber("Drivetrain/Chassis Angle", chassis.omegaRadiansPerSecond);
-
-        drivetrain.driveFieldCentric(chassis);
+        if (currentState != SystemState.TRAJECTORY_FOLLOWING)
+            drivetrain.driveFieldCentric(chassis);
         // updateStateVariables(moduleStates);
     }
 
@@ -557,8 +555,10 @@ public class Drivetrain implements Subsystem {
     public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state) {
         // ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(),
         // 100);
+
         drivetrain.m_odometry.resetPosition(getYaw(), getModulePositions(),
                 new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
+                drivetrain.seedFieldRelative();
     }
 
     public void zeroGyroscope() {
