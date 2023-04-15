@@ -308,12 +308,14 @@ public class Drivetrain implements Subsystem {
         // SwerveModuleState[] moduleStates = new SwerveModuleState[4];
         switch (currentState) {
             case TRAJECTORY_FOLLOWING:
-                drivetrain.driveFieldCentric(drivetrain.m_kinematics.toChassisSpeeds(trajectoryStates));
+                setModuleStates(trajectoryStates);
                 break;
             case AUTO_BALANCE:
                 autoBalance();
                 // System.out.println("IN balance");
                 break;
+
+
             case LIMELIGHT_CRUISE:
                 if (limelightLock)
                     drive(
@@ -562,6 +564,11 @@ public class Drivetrain implements Subsystem {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.maxSpeed);
         ChassisSpeeds chassis = drivetrain.m_kinematics.toChassisSpeeds(desiredStates[0], desiredStates[1], desiredStates[2], desiredStates[3]
         );
+
+        SmartDashboard.putNumber("Drivetrain/Chassis X", chassis.vxMetersPerSecond);
+        SmartDashboard.putNumber("Drivetrain/Chassis Y", chassis.vyMetersPerSecond);
+        SmartDashboard.putNumber("Drivetrain/Chassis Angle", chassis.omegaRadiansPerSecond);
+
         drivetrain.driveFieldCentric(chassis);
     }
 
