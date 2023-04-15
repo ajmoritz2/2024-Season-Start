@@ -388,7 +388,7 @@ public class Arm implements Subsystem {
         }
 
 		else if (m_controller.getOptionsButtonPressed())
-        	zeroRotateEncoder();
+            zeroRotateSensor();
 			
         if (m_controller.getPSButtonPressed()){
             

@@ -49,11 +49,19 @@ public class Autons {
 
     private static List<PathPlannerTrajectory> wireCoverRed = PathPlanner.loadPathGroup("WireCover Red", new PathConstraints(2, 1.75), new PathConstraints(2, 1.75), new PathConstraints(2, 1.75));
    
+    private static List<PathPlannerTrajectory> shortI = PathPlanner.loadPathGroup("short", new PathConstraints(1.75, 0.1));
+
+
     public static Command emergencyDonNothing(Drivetrain drivetrain){
         return new InstantCommand(() -> drivetrain.drive(0,0,0,true));
     }
 
     private static double firstWait = 1.7;
+
+    public static Command shortOne(Drivetrain drivetrain){
+        Command[] fullAuto = TheoryPath.getPathLegs(shortI, drivetrain);
+        return new SequentialCommandGroup(fullAuto[0]);
+    }
 
     public static Command center1(Drivetrain driveTrain, Arm arm, Intake intake) {
 

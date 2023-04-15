@@ -176,7 +176,7 @@ public class Drivetrain implements Subsystem {
                         .withWheelRadius(2)
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(14)
+                        .withSlipCurrent(400)
                         .withLocationX(0.260)
                         .withLocationY(0.222)
                         ,
@@ -190,7 +190,7 @@ public class Drivetrain implements Subsystem {
                         .withWheelRadius(2)
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(14)
+                        .withSlipCurrent(400)
                         .withLocationX(0.260)
                         .withLocationY(-0.222),
 
@@ -203,7 +203,7 @@ public class Drivetrain implements Subsystem {
                         .withWheelRadius(2)
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(14)
+                        .withSlipCurrent(400)
                         .withLocationX(-0.260)
                         .withLocationY(0.222),
 
@@ -216,7 +216,7 @@ public class Drivetrain implements Subsystem {
                         .withWheelRadius(2)
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(14)
+                        .withSlipCurrent(400)
                         .withLocationY(-0.260)
                         .withLocationX(-0.222) );
 
@@ -280,10 +280,13 @@ public class Drivetrain implements Subsystem {
                 controller.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
         periodicIO.robotOrientedModifier = controller.getLeftTriggerAxis() > 0.25;
 
-        periodicIO.modifiedJoystickX =- slewX
-                .calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
-        periodicIO.modifiedJoystickY = -slewY
-                .calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+        // periodicIO.modifiedJoystickX = -slewX
+        //         .calculate(-controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+        // periodicIO.modifiedJoystickY = -slewY
+        //         .calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
+
+        periodicIO.modifiedJoystickX = -controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
+        periodicIO.modifiedJoystickY = -controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
 
         if (limelightLock) {
             periodicIO.modifiedJoystickX = slewX
@@ -293,7 +296,7 @@ public class Drivetrain implements Subsystem {
                     .calculate(MathUtil.clamp(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND),
                             -Constants.DRIVE.CRUISING_SPEED, Constants.DRIVE.CRUISING_SPEED));
         }
-        periodicIO.modifiedJoystickR = slewRot
+        periodicIO.modifiedJoystickR = -slewRot
                 .calculate(-controller.getRightX() * halfWhenCrawl(MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND)) * 0.75;
 
         checkButtons();
@@ -635,7 +638,7 @@ public class Drivetrain implements Subsystem {
         // // We have to invert the angle of the NavX so that rotating the robot
         // counter-clockwise makes the angle increase.
 
-        return Rotation2d.fromDegrees(360.0 - ahrs.getYaw());
+        return Rotation2d.fromDegrees(drivetrain.getYaw());
     }
 
     public double getPitch() {

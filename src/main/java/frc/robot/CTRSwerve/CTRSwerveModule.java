@@ -11,6 +11,8 @@ import com.ctre.phoenixpro.hardware.CANcoder;
 import com.ctre.phoenixpro.hardware.TalonFX;
 import com.ctre.phoenixpro.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenixpro.signals.InvertedValue;
+import com.ctre.phoenixpro.signals.NeutralModeValue;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -44,6 +46,7 @@ public class CTRSwerveModule {
         talonConfigs.Slot0 = constants.DriveMotorGains;
         talonConfigs.TorqueCurrent.PeakForwardTorqueCurrent = constants.SlipCurrent;
         talonConfigs.TorqueCurrent.PeakReverseTorqueCurrent = -constants.SlipCurrent;
+        talonConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         m_driveMotor.getConfigurator().apply(talonConfigs);
 
         /* Undo changes for torqueCurrent */
@@ -55,6 +58,8 @@ public class CTRSwerveModule {
         talonConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
         talonConfigs.Feedback.RotorToSensorRatio = constants.SteerMotorGearRatio;
 
+
+        talonConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         talonConfigs.ClosedLoopGeneral.ContinuousWrap =
                 true; // Enable continuous wrap for swerve modules
 
@@ -62,10 +67,12 @@ public class CTRSwerveModule {
                 constants.SteerMotorReversed
                         ? InvertedValue.Clockwise_Positive
                         : InvertedValue.CounterClockwise_Positive;
+        
         m_steerMotor.getConfigurator().apply(talonConfigs);
 
         CANcoderConfiguration cancoderConfigs = new CANcoderConfiguration();
         cancoderConfigs.MagnetSensor.MagnetOffset = constants.CANcoderOffset;
+        
         m_cancoder.getConfigurator().apply(cancoderConfigs);
 
         m_drivePosition = m_driveMotor.getPosition();

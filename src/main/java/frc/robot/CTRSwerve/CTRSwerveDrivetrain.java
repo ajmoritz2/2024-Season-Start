@@ -124,6 +124,12 @@ public class CTRSwerveDrivetrain {
         }
     }
 
+    public void autonDrive(SwerveModuleState[] states) {
+        for (int i = 0; i < ModuleCount; ++i) {
+            m_modules[i].apply(states[i]);
+        }
+    }
+
     public void driveFieldCentric(ChassisSpeeds speeds) {
         var roboCentric = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, m_pigeon2.getRotation2d());
         var swerveStates = m_kinematics.toSwerveModuleStates(roboCentric);
@@ -154,8 +160,12 @@ public class CTRSwerveDrivetrain {
         }
     }
 
+    public double getYaw(){
+        return m_pigeon2.getYaw().getValue();
+    }
+
     public void seedFieldRelative() {
-        m_pigeon2.setYaw(0);
+        m_pigeon2.setYaw(180);
     }
 
     public Pose2d getPoseMeters() {
