@@ -305,50 +305,56 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void writePeriodicOutputs(double timestamp) {
-        // SwerveModuleState[] moduleStates = new SwerveModuleState[4];
+        ChassisSpeeds chassis = new ChassisSpeeds(0,0,0);
+        
         switch (currentState) {
             case TRAJECTORY_FOLLOWING:
-                setModuleStates(trajectoryStates);
+                SwerveDriveKinematics.desaturateWheelSpeeds(trajectoryStates, Constants.Swerve.maxSpeed);
+                chassis = drivetrain.m_kinematics.toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
+                );
                 break;
             case AUTO_BALANCE:
                 autoBalance();
-                // System.out.println("IN balance");
                 break;
 
 
             case LIMELIGHT_CRUISE:
                 if (limelightLock)
-                    drive(
+                    chassis = new ChassisSpeeds(
                             MathUtil.clamp(periodicIO.modifiedJoystickY, -Constants.DRIVE.CRUISING_SPEED,
                                     Constants.DRIVE.CRUISING_SPEED),
                             MathUtil.clamp(periodicIO.modifiedJoystickX, -Constants.DRIVE.CRUISING_SPEED,
                                     Constants.DRIVE.CRUISING_SPEED),
-                            periodicIO.modifiedJoystickR, true);
+                            periodicIO.modifiedJoystickR);
 
                 break;
             case LOCK_ROTATION:
                 if (lockButton)
-                    drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
-                            correctRightRotation(lockDir), true);
+                    chassis = new ChassisSpeeds(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
+                            correctRightRotation(lockDir));
                 else
-                    drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
-                            correctLeftRotation(lockDir), true);
+                    chassis = new ChassisSpeeds(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
+                            correctLeftRotation(lockDir));
 
                 break;
             case CRUISE:
-                drive(Constants.DRIVE.CRUISING_SPEED, 0, periodicIO.modifiedJoystickR, false);
+                chassis = new ChassisSpeeds(Constants.DRIVE.CRUISING_SPEED, 0, periodicIO.modifiedJoystickR);
                 break;
             case MANUAL_CONTROL:
-                    drive(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
-                        periodicIO.modifiedJoystickR, true);
+                chassis = new ChassisSpeeds(periodicIO.modifiedJoystickY, periodicIO.modifiedJoystickX,
+                        periodicIO.modifiedJoystickR);
                 break;
             default:
             case IDLE:
-                drive(0.0, 0.0, 0.0, true);
                 break;
 
         }
 
+        SmartDashboard.putNumber("Drivetrain/Chassis X", chassis.vxMetersPerSecond);
+        SmartDashboard.putNumber("Drivetrain/Chassis Y", chassis.vyMetersPerSecond);
+        SmartDashboard.putNumber("Drivetrain/Chassis Angle", chassis.omegaRadiansPerSecond);
+
+        drivetrain.driveFieldCentric(chassis);
         // updateStateVariables(moduleStates);
     }
 
@@ -564,10 +570,6 @@ public class Drivetrain implements Subsystem {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.maxSpeed);
         ChassisSpeeds chassis = drivetrain.m_kinematics.toChassisSpeeds(desiredStates[0], desiredStates[1], desiredStates[2], desiredStates[3]
         );
-
-        SmartDashboard.putNumber("Drivetrain/Chassis X", chassis.vxMetersPerSecond);
-        SmartDashboard.putNumber("Drivetrain/Chassis Y", chassis.vyMetersPerSecond);
-        SmartDashboard.putNumber("Drivetrain/Chassis Angle", chassis.omegaRadiansPerSecond);
 
         drivetrain.driveFieldCentric(chassis);
     }
