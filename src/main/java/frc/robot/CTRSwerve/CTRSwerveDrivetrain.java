@@ -2,6 +2,8 @@ package frc.robot.CTRSwerve;
 
 import com.ctre.phoenixpro.BaseStatusSignalValue;
 import com.ctre.phoenixpro.hardware.Pigeon2;
+import com.pathplanner.lib.PathPlannerTrajectory;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,8 +21,8 @@ public class CTRSwerveDrivetrain {
 
     private CTRSwerveModule[] m_modules;
     private Pigeon2 m_pigeon2;
-    public SwerveDriveKinematics m_kinematics;
-    public SwerveDriveOdometry m_odometry;
+    private SwerveDriveKinematics m_kinematics;
+    private SwerveDriveOdometry m_odometry;
     private SwerveModulePosition[] m_modulePositions;
     private Translation2d[] m_moduleLocations;
     private OdometryThread m_odometryThread;
@@ -70,7 +72,7 @@ public class CTRSwerveDrivetrain {
                         BaseStatusSignalValue.getLatencyCompensatedValue(
                                 m_pigeon2.getYaw(), m_pigeon2.getAngularVelocityZ());
 
-                m_odometry.update(Rotation2d.fromDegrees(yawDegrees), m_modulePositions);
+                m_odometry.update(Rotation2d.fromDegrees(yawDegrees-180), m_modulePositions);
                 m_field.setRobotPose(m_odometry.getPoseMeters());
 
                 SmartDashboard.putNumber("Successful Daqs", SuccessfulDaqs);
@@ -87,6 +89,7 @@ public class CTRSwerveDrivetrain {
         ModuleCount = modules.length;
 
         m_pigeon2 = new Pigeon2(driveTrainConstants.Pigeon2Id, driveTrainConstants.CANbusName);
+        m_pigeon2.setYaw(180);
 
         m_modules = new CTRSwerveModule[ModuleCount];
         m_modulePositions = new SwerveModulePosition[ModuleCount];
@@ -160,6 +163,26 @@ public class CTRSwerveDrivetrain {
         }
     }
 
+    public void resetOdometry(){
+        m_odometry.resetPosition(Rotation2d.fromDegrees(getYaw()), getSwervePositions(), new Pose2d(0, 0, new Rotation2d()));
+    }
+
+    public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state) {
+        // ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(),
+        // 100);
+        m_odometry.resetPosition(Rotation2d.fromDegrees(getYaw()), getSwervePositions(),
+                new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
+    }
+
+    public void resetPose(Pose2d odo) {
+        m_odometry.resetPosition(Rotation2d.fromDegrees(getYaw()), getSwervePositions(), odo);
+        
+    }
+
+    public double getPitch(){
+        return m_pigeon2.getPitch().getValue();
+    }
+
     public double getYaw(){
         return m_pigeon2.getYaw().getValue();
     }
@@ -174,6 +197,14 @@ public class CTRSwerveDrivetrain {
 
     public double getSuccessfulDaqs() {
         return m_odometryThread.SuccessfulDaqs;
+    }
+
+    public SwerveDriveOdometry getOdometry(){
+        return this.m_odometry;
+    }
+
+    public SwerveDriveKinematics getKinematics() {
+        return this.m_kinematics;
     }
 
     public double getFailedDaqs() {

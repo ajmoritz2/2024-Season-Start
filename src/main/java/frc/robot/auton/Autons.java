@@ -25,6 +25,12 @@ import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
 
 public class Autons {
+
+        // Use sample from the full autos to get the pose meters of the robot at the timestamp given. 
+        // Log every cycle in some other function that is actually called every cycle.
+        // Figure out how to make the commands themselves public and keep the legs of the path moving.
+
+        // Hopefully this will work.
     
     private static List<PathPlannerTrajectory> center = PathPlanner.loadPathGroup("CenterReal", new PathConstraints(2.5, 2),
      new PathConstraints(2.5, 1.5),

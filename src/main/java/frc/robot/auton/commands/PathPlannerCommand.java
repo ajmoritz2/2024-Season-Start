@@ -36,7 +36,7 @@ public class PathPlannerCommand extends SwerveControllerCommand {
     
     super(trajectory,
         drivetrain::getPose,
-        drivetrain.getKinematics(),
+        drivetrain.geteBaseDrivetrain().getKinematics(),
         new PIDController(translateKp, translateKi, translateKd),
         new PIDController(translateKp, translateKi, translateKd),
         thetaController,
@@ -58,7 +58,7 @@ public class PathPlannerCommand extends SwerveControllerCommand {
     drivetrain.setWantedState(Drivetrain.WantedState.TRAJECTORY_FOLLOWING);
 
     if(resetOdometry){
-        drivetrain.initAutonPosition(trajectory.getInitialState());
+        drivetrain.geteBaseDrivetrain().initAutonPosition(trajectory.getInitialState());
         SmartDashboard.putString("auton/pose",trajectory.getInitialPose().toString());
         SmartDashboard.putString("auton/angle",trajectory.getInitialState().holonomicRotation.toString());    
     }

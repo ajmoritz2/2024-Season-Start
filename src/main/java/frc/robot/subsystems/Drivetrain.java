@@ -1,8 +1,9 @@
 
 package frc.robot.subsystems;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenixpro.configs.Slot0Configs;
-import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.PathPlannerTrajectory;
 
 import edu.wpi.first.math.MathUtil;
@@ -12,8 +13,10 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.constraint.SwerveDriveKinematicsConstraint;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -21,6 +24,7 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.CTRSwerve.CTRSwerveDrivetrain;
+import frc.robot.CTRSwerve.SwerveDriveConstantsCreator;
 import frc.robot.CTRSwerve.SwerveDriveTrainConstants;
 import frc.robot.CTRSwerve.SwerveModuleConstants;
 import frc.robot.utils.maths.oneDimensionalLookup;
@@ -73,12 +77,13 @@ public class Drivetrain implements Subsystem {
             new Translation2d(-Constants.Swerve.trackWidth / 2.0, Constants.Swerve.wheelBase / 2.0),
             // Back right
             new Translation2d(-Constants.Swerve.trackWidth / 2.0, -Constants.Swerve.wheelBase / 2.0));
+        
+    private SwerveDriveOdometry autoOdom;
 
     private final SlewRateLimiter slewX = new SlewRateLimiter(16);
     private final SlewRateLimiter slewY = new SlewRateLimiter(16);
     private final SlewRateLimiter slewRot = new SlewRateLimiter(1880);
 
-    private final AHRS ahrs = new AHRS(SPI.Port.kMXP, (byte) 200);
     private double gyroOffset;
 
     private enum SystemState {
@@ -165,60 +170,24 @@ public class Drivetrain implements Subsystem {
             driveGains.kP = 1;
         }
 
-        drivetrain = new CTRSwerveDrivetrain(new SwerveDriveTrainConstants().withTurnKp(Constants.Swerve.angleKP).withPigeon2Id(50).withCANbusName("SWERVEbus"),
+        SwerveDriveConstantsCreator constants =  new SwerveDriveConstantsCreator(Constants.Swerve.gearRatio, Constants.Swerve.angleGearRatio, 
+        2, 400, steerGains, driveGains, false);
+    
 
-                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod0.canCoderID)
-                        .withDriveMotorId(Constants.Swerve.Mod0.driveMotorID)
-                        .withSteerMotorId(Constants.Swerve.Mod0.angleMotorID)
-                        .withCANcoderOffset(Constants.Swerve.Mod0.dobOffset)
-                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio)
-                        .withSteerMotorGearRatio(Constants.Swerve.angleGearRatio)
-                        .withWheelRadius(2)
-                        .withSteerMotorGains(steerGains)
-                        .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(400)
-                        .withLocationX(0.260)
-                        .withLocationY(0.222)
+        drivetrain = new CTRSwerveDrivetrain(new SwerveDriveTrainConstants().withTurnKp(Constants.Swerve.angleKP).withPigeon2Id(50).withCANbusName("MANIPbus"),
+
+        constants.createModuleConstants(Constants.Swerve.Mod0.angleMotorID, Constants.Swerve.Mod0.driveMotorID, 
+                Constants.Swerve.Mod0.canCoderID, Constants.Swerve.Mod0.dobOffset, 0.260, 0.222)
                         ,
 
-                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod1.canCoderID)
-                        .withDriveMotorId(Constants.Swerve.Mod1.driveMotorID)
-                        .withSteerMotorId(Constants.Swerve.Mod1.angleMotorID)
-                        .withCANcoderOffset(Constants.Swerve.Mod1.dobOffset)
-                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio)
-                        .withSteerMotorGearRatio(Constants.Swerve.angleGearRatio)
-                        .withWheelRadius(2)
-                        .withSteerMotorGains(steerGains)
-                        .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(400)
-                        .withLocationX(0.260)
-                        .withLocationY(-0.222),
+                constants.createModuleConstants(Constants.Swerve.Mod1.angleMotorID, Constants.Swerve.Mod1.driveMotorID, 
+                        Constants.Swerve.Mod1.canCoderID, Constants.Swerve.Mod1.dobOffset, 0.260, -0.222),
 
-                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod2.canCoderID)
-                        .withDriveMotorId(Constants.Swerve.Mod2.driveMotorID)
-                        .withSteerMotorId(Constants.Swerve.Mod2.angleMotorID)
-                        .withCANcoderOffset(Constants.Swerve.Mod2.dobOffset)
-                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio)
-                        .withSteerMotorGearRatio(Constants.Swerve.angleGearRatio)
-                        .withWheelRadius(2)
-                        .withSteerMotorGains(steerGains)
-                        .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(400)
-                        .withLocationX(-0.260)
-                        .withLocationY(0.222),
+                constants.createModuleConstants(Constants.Swerve.Mod2.angleMotorID, Constants.Swerve.Mod2.driveMotorID, 
+                        Constants.Swerve.Mod2.canCoderID, Constants.Swerve.Mod2.dobOffset, -0.260, 0.222),
 
-                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod3.canCoderID)
-                        .withDriveMotorId(Constants.Swerve.Mod3.driveMotorID)
-                        .withSteerMotorId(Constants.Swerve.Mod3.angleMotorID)
-                        .withCANcoderOffset(Constants.Swerve.Mod3.dobOffset)
-                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio)
-                        .withSteerMotorGearRatio(Constants.Swerve.angleGearRatio)
-                        .withWheelRadius(2)
-                        .withSteerMotorGains(steerGains)
-                        .withDriveMotorGains(driveGains)
-                        .withSlipCurrent(400)
-                        .withLocationY(-0.260)
-                        .withLocationX(-0.222) );
+                constants.createModuleConstants(Constants.Swerve.Mod3.angleMotorID, Constants.Swerve.Mod3.driveMotorID, 
+                        Constants.Swerve.Mod3.canCoderID, Constants.Swerve.Mod3.dobOffset, -0.260, -0.222));
 
         // mSwerveMods = new SwerveModule[] {
         // new SwerveModule(0, Constants.Swerve.Mod0.constants),
@@ -228,7 +197,7 @@ public class Drivetrain implements Subsystem {
         // };
 
         drivetrain.seedFieldRelative();
-
+        autoOdom = drivetrain.getOdometry();
 
         this.controller = controller;
 
@@ -310,7 +279,7 @@ public class Drivetrain implements Subsystem {
         switch (currentState) {
             case TRAJECTORY_FOLLOWING:
                 SwerveDriveKinematics.desaturateWheelSpeeds(trajectoryStates, Constants.Swerve.maxSpeed);
-                chassis = drivetrain.m_kinematics.toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
+                chassis = drivetrain.getKinematics().toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
                 );
                 break;
             case AUTO_BALANCE:
@@ -321,7 +290,8 @@ public class Drivetrain implements Subsystem {
             case LIMELIGHT_CRUISE:
                 if (limelightLock)
                     chassis = new ChassisSpeeds(
-                            MathUtil.clamp(periodicIO.modifiedJoystickY, -Constants.DRIVE.CRUISING_SPEED,
+                            MathUtil.clamp(periodicIO.
+                            modifiedJoystickY, -Constants.DRIVE.CRUISING_SPEED,
                                     Constants.DRIVE.CRUISING_SPEED),
                             MathUtil.clamp(periodicIO.modifiedJoystickX, -Constants.DRIVE.CRUISING_SPEED,
                                     Constants.DRIVE.CRUISING_SPEED),
@@ -353,6 +323,11 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putNumber("Drivetrain/Chassis X", chassis.vxMetersPerSecond);
         SmartDashboard.putNumber("Drivetrain/Chassis Y", chassis.vyMetersPerSecond);
         SmartDashboard.putNumber("Drivetrain/Chassis Angle", chassis.omegaRadiansPerSecond);
+        Logger.getInstance().recordOutput("Drivetrain/Chassis Speed X", chassis.vxMetersPerSecond);
+        Logger.getInstance().recordOutput("Drivetrain/Chassis Speed Y", chassis.vyMetersPerSecond);
+
+        Logger.getInstance().recordOutput("Drivetrain/Pose", drivetrain.getPoseMeters());
+        
 
         drivetrain.driveFieldCentric(chassis);
         // updateStateVariables(moduleStates);
@@ -391,7 +366,7 @@ public class Drivetrain implements Subsystem {
         if (controller.getAButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
 
-        pitchAngle = ahrs.getPitch() - Constants.BALANCED_OFFESET;
+        pitchAngle = drivetrain.getPitch() - Constants.BALANCED_OFFESET;
 
         if (Math.abs(pitchAngle) >= Math.abs(Constants.BEAM_BALANCED_ANGLE_TRESHOLD_DEGREES) && balancedX) {
             balancedX = false;
@@ -483,7 +458,7 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void zeroSensors() {
-        resetOdometry();
+        drivetrain.resetOdometry();
         drivetrain.driveFullyFieldCentric(0, 0, getYaw());
     }
 
@@ -542,7 +517,6 @@ public class Drivetrain implements Subsystem {
         // odometry.getPoseMeters().getTranslation().getX());
         // SmartDashboard.putNumber("PosY",
         // odometry.getPoseMeters().getTranslation().getY());
-        SmartDashboard.putBoolean("NAVX Connected", ahrs.isConnected());
         SmartDashboard.putNumber("Yaw", getYaw().getRadians());
         SmartDashboard.putNumber("Goal Angle", (getYaw().getRadians() - Math.toRadians(yawToLock)));
         SmartDashboard.putNumber("Pitch", pitchAngle);
@@ -554,11 +528,8 @@ public class Drivetrain implements Subsystem {
         this.wantedState = wantedState;
     }
 
-    public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state) {
-        // ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(),
-        // 100);
-        drivetrain.m_odometry.resetPosition(getYaw(), getModulePositions(),
-                new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
+    public CTRSwerveDrivetrain geteBaseDrivetrain(){
+        return drivetrain;
     }
 
     public void zeroGyroscope() {
@@ -568,13 +539,16 @@ public class Drivetrain implements Subsystem {
 
     public void setModuleStates(SwerveModuleState[] desiredStates) {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.maxSpeed);
-        ChassisSpeeds chassis = drivetrain.m_kinematics.toChassisSpeeds(desiredStates[0], desiredStates[1], desiredStates[2], desiredStates[3]
+        ChassisSpeeds chassis = drivetrain.getKinematics().toChassisSpeeds(desiredStates[0], desiredStates[1], desiredStates[2], desiredStates[3]
         );
 
         drivetrain.driveFieldCentric(chassis);
     }
 
     public void setModuleStatesFromTrajectory(SwerveModuleState[] states) {
+        ChassisSpeeds chassis = drivetrain.getKinematics().toChassisSpeeds(states[0], states[1], states[2], states[3]
+        );
+        
         trajectoryStates = states;
     }
 
@@ -587,33 +561,11 @@ public class Drivetrain implements Subsystem {
         return defaultStateChange();
     }
 
-    private boolean checkNoDriveInput() {
-        return (Math.abs(periodicIO.VxCmd) < Constants.DEADBAND
-                && Math.abs(periodicIO.VyCmd) < Constants.DEADBAND
-                && Math.abs(periodicIO.WzCmd) < Constants.DEADBAND);
-    }
-
     public Pose2d getPose() {
         return drivetrain.getPoseMeters();
     }
 
-    public void resetPose(Pose2d odo) {
-        drivetrain.
-        m_odometry.resetPosition(getYaw(), getModulePositions(), odo);
-        
-    }
 
-    private void updateOdometry() {
-    }
-
-    public void resetOdometry() {
-        drivetrain.m_odometry.resetPosition(getYaw(), getModulePositions(), new Pose2d(0, 0, new Rotation2d()));
-        ;
-    }
-
-    public SwerveDriveKinematics getKinematics() {
-        return drivetrain.m_kinematics;
-    }
 
     public void setAutoDriveSpeeds(double xSpeed, double ySpeed) {
         autoDriveSpeeds[0] = xSpeed;
@@ -639,22 +591,8 @@ public class Drivetrain implements Subsystem {
     }
 
     public Rotation2d getYaw() {
-        if (ahrs.isMagnetometerCalibrated()) {
-            // We will only get valid fused headings if the magnetometer is calibrated
-            return Rotation2d.fromDegrees(ahrs.getFusedHeading());
-        }
-        //
-        // // We have to invert the angle of the NavX so that rotating the robot
-        // counter-clockwise makes the angle increase.
 
         return Rotation2d.fromDegrees(drivetrain.getYaw());
-    }
-
-    public double getPitch() {
-        //
-        // // We have to invert the angle of the NavX so that rotating the robot
-        // counter-clockwise makes the angle increase.
-        return ahrs.getPitch();
     }
 
     @Override
