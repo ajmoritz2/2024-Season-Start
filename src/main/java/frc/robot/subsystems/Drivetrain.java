@@ -167,7 +167,7 @@ public class Drivetrain implements Subsystem {
         {
             steerGains.kP = 30;
             steerGains.kD = 0.2;
-            driveGains.kP = 1;
+            driveGains.kP = 2;
         }
 
         SwerveDriveConstantsCreator constants =  new SwerveDriveConstantsCreator(Constants.Swerve.gearRatio, Constants.Swerve.angleGearRatio, 
@@ -180,14 +180,44 @@ public class Drivetrain implements Subsystem {
                 Constants.Swerve.Mod0.canCoderID, Constants.Swerve.Mod0.dobOffset, 0.260, 0.222)
                         ,
 
-                constants.createModuleConstants(Constants.Swerve.Mod1.angleMotorID, Constants.Swerve.Mod1.driveMotorID, 
-                        Constants.Swerve.Mod1.canCoderID, Constants.Swerve.Mod1.dobOffset, 0.260, -0.222),
+                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod1.canCoderID)
+                        .withDriveMotorId(Constants.Swerve.Mod1.driveMotorID)
+                        .withSteerMotorId(Constants.Swerve.Mod1.angleMotorID)
+                        .withCANcoderOffset(Constants.Swerve.Mod1.dobOffset)
+                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio)
+                        .withSteerMotorGearRatio(Constants.Swerve.angleGearRatio)
+                        .withWheelRadius(2)
+                        .withSteerMotorGains(steerGains)
+                        .withDriveMotorGains(driveGains)
+                        .withSlipCurrent(400)
+                        .withLocationX(0.260)
+                        .withLocationY(-0.222),
 
-                constants.createModuleConstants(Constants.Swerve.Mod2.angleMotorID, Constants.Swerve.Mod2.driveMotorID, 
-                        Constants.Swerve.Mod2.canCoderID, Constants.Swerve.Mod2.dobOffset, -0.260, 0.222),
+                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod2.canCoderID)
+                        .withDriveMotorId(Constants.Swerve.Mod2.driveMotorID)
+                        .withSteerMotorId(Constants.Swerve.Mod2.angleMotorID)
+                        .withCANcoderOffset(Constants.Swerve.Mod2.dobOffset)
+                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio)
+                        .withSteerMotorGearRatio(Constants.Swerve.angleGearRatio)
+                        .withWheelRadius(2)
+                        .withSteerMotorGains(steerGains)
+                        .withDriveMotorGains(driveGains)
+                        .withSlipCurrent(400)
+                        .withLocationX(-0.260)
+                        .withLocationY(0.222),
 
-                constants.createModuleConstants(Constants.Swerve.Mod3.angleMotorID, Constants.Swerve.Mod3.driveMotorID, 
-                        Constants.Swerve.Mod3.canCoderID, Constants.Swerve.Mod3.dobOffset, -0.260, -0.222));
+                new SwerveModuleConstants().withCANcoderId(Constants.Swerve.Mod3.canCoderID)
+                        .withDriveMotorId(Constants.Swerve.Mod3.driveMotorID)
+                        .withSteerMotorId(Constants.Swerve.Mod3.angleMotorID)
+                        .withCANcoderOffset(Constants.Swerve.Mod3.dobOffset)
+                        .withDriveMotorGearRatio(Constants.Swerve.gearRatio)
+                        .withSteerMotorGearRatio(Constants.Swerve.angleGearRatio)
+                        .withWheelRadius(2)
+                        .withSteerMotorGains(steerGains)
+                        .withDriveMotorGains(driveGains)
+                        .withSlipCurrent(400)
+                        .withLocationY(-0.260)
+                        .withLocationX(-0.222) );
 
         // mSwerveMods = new SwerveModule[] {
         // new SwerveModule(0, Constants.Swerve.Mod0.constants),
@@ -254,8 +284,8 @@ public class Drivetrain implements Subsystem {
         // periodicIO.modifiedJoystickY = -slewY
         //         .calculate(-controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND));
 
-        periodicIO.modifiedJoystickX = -controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
-        periodicIO.modifiedJoystickY = -controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
+        periodicIO.modifiedJoystickX = controller.getLeftX() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
+        periodicIO.modifiedJoystickY = controller.getLeftY() * halfWhenCrawl(MAX_VELOCITY_METERS_PER_SECOND);
 
         if (limelightLock) {
             periodicIO.modifiedJoystickX = slewX
@@ -279,7 +309,7 @@ public class Drivetrain implements Subsystem {
         switch (currentState) {
             case TRAJECTORY_FOLLOWING:
                 SwerveDriveKinematics.desaturateWheelSpeeds(trajectoryStates, Constants.Swerve.maxSpeed);
-                chassis = drivetrain.getKinematics().toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
+                chassis = drivetrain.m_kinematics.toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
                 );
                 break;
             case AUTO_BALANCE:
@@ -323,11 +353,6 @@ public class Drivetrain implements Subsystem {
         SmartDashboard.putNumber("Drivetrain/Chassis X", chassis.vxMetersPerSecond);
         SmartDashboard.putNumber("Drivetrain/Chassis Y", chassis.vyMetersPerSecond);
         SmartDashboard.putNumber("Drivetrain/Chassis Angle", chassis.omegaRadiansPerSecond);
-        Logger.getInstance().recordOutput("Drivetrain/Chassis Speed X", chassis.vxMetersPerSecond);
-        Logger.getInstance().recordOutput("Drivetrain/Chassis Speed Y", chassis.vyMetersPerSecond);
-
-        Logger.getInstance().recordOutput("Drivetrain/Pose", drivetrain.getPoseMeters());
-        
 
         drivetrain.driveFieldCentric(chassis);
         // updateStateVariables(moduleStates);
@@ -528,8 +553,11 @@ public class Drivetrain implements Subsystem {
         this.wantedState = wantedState;
     }
 
-    public CTRSwerveDrivetrain geteBaseDrivetrain(){
-        return drivetrain;
+    public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state) {
+        // ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(),
+        // 100);
+        drivetrain.m_odometry.resetPosition(getYaw(), getModulePositions(),
+                new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
     }
 
     public void zeroGyroscope() {

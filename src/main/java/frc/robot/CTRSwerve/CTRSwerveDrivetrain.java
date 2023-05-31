@@ -15,6 +15,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Constants;
 
 public class CTRSwerveDrivetrain {
     private final int ModuleCount;
@@ -103,7 +104,6 @@ public class CTRSwerveDrivetrain {
 
             iteration++;
         }
-        m_kinematics = new SwerveDriveKinematics(m_moduleLocations);
         m_odometry =
                 new SwerveDriveOdometry(m_kinematics, m_pigeon2.getRotation2d(), getSwervePositions());
         m_field = new Field2d();
@@ -128,6 +128,7 @@ public class CTRSwerveDrivetrain {
     }
 
     public void autonDrive(SwerveModuleState[] states) {
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, Constants.Swerve.maxSpeed);
         for (int i = 0; i < ModuleCount; ++i) {
             m_modules[i].apply(states[i]);
         }
@@ -188,7 +189,7 @@ public class CTRSwerveDrivetrain {
     }
 
     public void seedFieldRelative() {
-        m_pigeon2.setYaw(180);
+        m_pigeon2.setYaw(0);
     }
 
     public Pose2d getPoseMeters() {
