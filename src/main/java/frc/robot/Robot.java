@@ -11,6 +11,7 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -36,13 +37,11 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
-
     Logger.getInstance().recordMetadata("2023 KARLBOT", "RUNNING TODAY"); // Set a metadata value
 
     if (isReal()) {
         Logger.getInstance().addDataReceiver(new WPILOGWriter("/media/sda1/")); // Log to a USB stick
         Logger.getInstance().addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
-        new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
     } else {
         setUseTiming(false); // Run as fast as possible
         String logPath = LogFileUtil.findReplayLog(); // Pull the replay log from AdvantageScope (or prompt the user)
@@ -82,7 +81,7 @@ public class Robot extends LoggedRobot {
   @Override
   public void autonomousInit() {
     m_robotContainer.enableState = RobotContainer.EnableState.AUTON;
-    m_robotContainer.drivetrain.geteBaseDrivetrain().resetOdometry();
+    m_robotContainer.drivetrain.getBaseDrivetrain().resetOdometry();
 
 		autonomousCommand = m_robotContainer.getAutonChooser().getSelected();
 

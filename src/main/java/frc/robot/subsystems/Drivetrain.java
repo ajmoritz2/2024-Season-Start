@@ -11,13 +11,12 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.constraint.SwerveDriveKinematicsConstraint;
-import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -305,11 +304,13 @@ public class Drivetrain implements Subsystem {
     @Override
     public void writePeriodicOutputs(double timestamp) {
         ChassisSpeeds chassis = new ChassisSpeeds(0,0,0);
-        
+        Logger.getInstance().recordOutput("ACtual Pose", drivetrain.getOdometry().getPoseMeters());
+
         switch (currentState) {
             case TRAJECTORY_FOLLOWING:
                 SwerveDriveKinematics.desaturateWheelSpeeds(trajectoryStates, Constants.Swerve.maxSpeed);
-                chassis = drivetrain.m_kinematics.toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
+                Logger.getInstance().recordOutput("Swerve Module States", trajectoryStates);
+                chassis = drivetrain.getKinematics().toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
                 );
                 break;
             case AUTO_BALANCE:
@@ -556,7 +557,7 @@ public class Drivetrain implements Subsystem {
     public void initAutonPosition(PathPlannerTrajectory.PathPlannerState state) {
         // ErrorCode errorCode = pigeon.setYaw(state.holonomicRotation.getDegrees(),
         // 100);
-        drivetrain.m_odometry.resetPosition(getYaw(), getModulePositions(),
+        drivetrain.getOdometry().resetPosition(getYaw(), getModulePositions(),
                 new Pose2d(state.poseMeters.getTranslation(), state.holonomicRotation));
     }
 
@@ -574,8 +575,6 @@ public class Drivetrain implements Subsystem {
     }
 
     public void setModuleStatesFromTrajectory(SwerveModuleState[] states) {
-        ChassisSpeeds chassis = drivetrain.getKinematics().toChassisSpeeds(states[0], states[1], states[2], states[3]
-        );
         
         trajectoryStates = states;
     }
@@ -598,6 +597,10 @@ public class Drivetrain implements Subsystem {
     public void setAutoDriveSpeeds(double xSpeed, double ySpeed) {
         autoDriveSpeeds[0] = xSpeed;
         autoDriveSpeeds[1] = ySpeed;
+    }
+
+    public CTRSwerveDrivetrain getBaseDrivetrain(){
+        return drivetrain;
     }
 
     public SwerveModulePosition[] getModulePositions() {

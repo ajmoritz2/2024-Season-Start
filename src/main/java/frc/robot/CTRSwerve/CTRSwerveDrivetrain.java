@@ -104,6 +104,7 @@ public class CTRSwerveDrivetrain {
 
             iteration++;
         }
+        m_kinematics = new SwerveDriveKinematics(m_moduleLocations);
         m_odometry =
                 new SwerveDriveOdometry(m_kinematics, m_pigeon2.getRotation2d(), getSwervePositions());
         m_field = new Field2d();
