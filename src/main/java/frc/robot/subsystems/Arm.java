@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenixpro.StatusCode;
 import com.ctre.phoenixpro.configs.TalonFXConfiguration;
 import com.ctre.phoenixpro.controls.MotionMagicVoltage;
@@ -501,6 +503,29 @@ public class Arm implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp){
+        Logger log = Logger.getInstance();
+
+        log.recordOutput("Arm State", m_currentState.toString());
+        log.recordOutput("ExtendLimitSwitch", m_extendLimitSwitchHit);
+        log.recordOutput("RotateLimitSwitch", m_rotateLimitSwitchHit);
+
+        log.recordOutput("Extend Motor Pos", m_extendMotor.getPosition().getValue());
+        log.recordOutput("Rotate Motor Pos", m_rotateMotor.getPosition().getValue());
+		log.recordOutput("Extend Motor Temp", m_extendMotor.getDeviceTemp().getValue());
+		log.recordOutput("Rotate Motor Temp", m_rotateMotor.getDeviceTemp().getValue());
+        log.recordOutput("Rotate setpoint", m_rotate_rotations);
+        log.recordOutput("Extend setpoint", m_extend_rotations);
+        log.recordOutput("Manual Mode", m_manualMode);
+        log.recordOutput("Ext Motor sup cur", m_extendMotor.getSupplyCurrent().getValue());
+        log.recordOutput("Rot Motor sup cur", m_rotateMotor.getSupplyCurrent().getValue());
+        log.recordOutput("Arm Ecdr Angle", m_rotateEncoderAngle);
+        log.recordOutput("Arm Ecdr Rot", m_rotateEncoderRotations);
+        log.recordOutput("Arm Ecdr Velocity", m_rotateEncoderVelocity);
+        log.recordOutput("PDH Voltage", m_PDH.getVoltage());
+        log.recordOutput("PDH Current", m_PDH.getTotalCurrent());
+        log.recordOutput("Arm Error", percentOutputError());
+
+
         SmartDashboard.putString("Arm State", m_currentState.toString());
         SmartDashboard.putBoolean("ExtendLimitSwitch", m_extendLimitSwitchHit);
         SmartDashboard.putBoolean("RotateLimitSwitch", m_rotateLimitSwitchHit);
