@@ -215,8 +215,8 @@ public class Drivetrain implements Subsystem {
                         .withSteerMotorGains(steerGains)
                         .withDriveMotorGains(driveGains)
                         .withSlipCurrent(400)
-                        .withLocationY(-0.260)
-                        .withLocationX(-0.222) );
+                        .withLocationX(-0.260)
+                        .withLocationY(-0.222) );
 
         // mSwerveMods = new SwerveModule[] {
         // new SwerveModule(0, Constants.Swerve.Mod0.constants),

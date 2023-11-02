@@ -18,10 +18,10 @@ public class PathPlannerCommand extends SwerveControllerCommand {
   private final boolean resetOdometry;
 
     //TODO: relocate to constants file
-    private static final double translateKp = 0.45;
+    private static final double translateKp = 0.025;
     private static final double translateKi = 0;
     private static final double translateKd = 0;
-    private static final double rotateKp = 0.2; //.3
+    private static final double rotateKp = 0.15;
     private static final double rotateKi = 0;
     private static final double rotateKd = 0;
 
