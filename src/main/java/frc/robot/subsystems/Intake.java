@@ -195,23 +195,23 @@ public class Intake implements Subsystem {
     }
     @Override
     public void outputTelemetry(double timestamp){
-        Logger log = Logger.getInstance();
+        // Logger log = Logger.getInstance();
 
-        log.recordOutput("Intake State", currentState.toString());
-        log.recordOutput("Intake Stator Cur", m_IntakeStatorCurrent);
-        log.recordOutput("Intake Supply Cur", intakeMotor.getSupplyCurrent());
-        log.recordOutput("Intake Motor Temp", intakeMotor.getTemperature());
-        log.recordOutput("Intake Percent Out", m_intakePercentOut);
-        log.recordOutput("HaveCube", haveCube);
-        log.recordOutput("HaveCone", haveCone);
+        // log.recordOutput("Intake State", currentState.toString());
+        // log.recordOutput("Intake Stator Cur", m_IntakeStatorCurrent);
+        // log.recordOutput("Intake Supply Cur", intakeMotor.getSupplyCurrent());
+        // log.recordOutput("Intake Motor Temp", intakeMotor.getTemperature());
+        // log.recordOutput("Intake Percent Out", m_intakePercentOut);
+        // log.recordOutput("HaveCube", haveCube);
+        // log.recordOutput("HaveCone", haveCone);
 
         SmartDashboard.putString("Intake State", currentState.toString());
         SmartDashboard.putNumber("Intake Stator Cur", m_IntakeStatorCurrent);
         SmartDashboard.putNumber("Intake Supply Cur", intakeMotor.getSupplyCurrent());
         SmartDashboard.putNumber("Intake Motor Temp", intakeMotor.getTemperature());
         SmartDashboard.putNumber("Intake Percent Out", m_intakePercentOut);
-        SmartDashboard.putBoolean("HaveCube", haveCube);
-        SmartDashboard.putBoolean("HaveCone", haveCone);
+        // SmartDashboard.putBoolean("HaveCube", haveCube);
+        // SmartDashboard.putBoolean("HaveCone", haveCone);
     }
     @Override
     public void stop() {

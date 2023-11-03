@@ -304,12 +304,12 @@ public class Drivetrain implements Subsystem {
     @Override
     public void writePeriodicOutputs(double timestamp) {
         ChassisSpeeds chassis = new ChassisSpeeds(0,0,0);
-        Logger.getInstance().recordOutput("ACtual Pose", drivetrain.getOdometry().getPoseMeters());
+        //Logger.getInstance().recordOutput("ACtual Pose", drivetrain.getOdometry().getPoseMeters());
 
         switch (currentState) {
             case TRAJECTORY_FOLLOWING:
                 SwerveDriveKinematics.desaturateWheelSpeeds(trajectoryStates, Constants.Swerve.maxSpeed);
-                Logger.getInstance().recordOutput("Swerve Module States", trajectoryStates);
+                //Logger.getInstance().recordOutput("Swerve Module States", trajectoryStates);
                 chassis = drivetrain.getKinematics().toChassisSpeeds(trajectoryStates[0], trajectoryStates[1], trajectoryStates[2], trajectoryStates[3]
                 );
                 break;
@@ -351,9 +351,9 @@ public class Drivetrain implements Subsystem {
 
         }
 
-        SmartDashboard.putNumber("Drivetrain/Chassis X", chassis.vxMetersPerSecond);
-        SmartDashboard.putNumber("Drivetrain/Chassis Y", chassis.vyMetersPerSecond);
-        SmartDashboard.putNumber("Drivetrain/Chassis Angle", chassis.omegaRadiansPerSecond);
+        //SmartDashboard.putNumber("Drivetrain/Chassis X", chassis.vxMetersPerSecond);
+        //SmartDashboard.putNumber("Drivetrain/Chassis Y", chassis.vyMetersPerSecond);
+        //SmartDashboard.putNumber("Drivetrain/Chassis Angle", chassis.omegaRadiansPerSecond);
 
         drivetrain.driveFieldCentric(chassis);
         // updateStateVariables(moduleStates);
@@ -543,10 +543,10 @@ public class Drivetrain implements Subsystem {
         // odometry.getPoseMeters().getTranslation().getX());
         // SmartDashboard.putNumber("PosY",
         // odometry.getPoseMeters().getTranslation().getY());
-        SmartDashboard.putNumber("Yaw", getYaw().getRadians());
-        SmartDashboard.putNumber("Goal Angle", (getYaw().getRadians() - Math.toRadians(yawToLock)));
-        SmartDashboard.putNumber("Pitch", pitchAngle);
-        SmartDashboard.putNumber("Goal switch", lockToPi(Math.toRadians(yawToLock) + Math.PI * 2));
+        //SmartDashboard.putNumber("Yaw", getYaw().getRadians());
+        //SmartDashboard.putNumber("Goal Angle", (getYaw().getRadians() - Math.toRadians(yawToLock)));
+        //SmartDashboard.putNumber("Pitch", pitchAngle);
+        //SmartDashboard.putNumber("Goal switch", lockToPi(Math.toRadians(yawToLock) + Math.PI * 2));
 
     }
 
