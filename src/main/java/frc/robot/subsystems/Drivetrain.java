@@ -391,6 +391,11 @@ public class Drivetrain implements Subsystem {
             setWantedState(WantedState.AUTO_BALANCE);
         if (controller.getAButtonReleased())
             setWantedState(WantedState.MANUAL_CONTROL);
+            
+        if (controller.getBButtonPressed()){
+            //zeroSensors();
+            zeroGyroscope();
+        }
 
         pitchAngle = drivetrain.getPitch() - Constants.BALANCED_OFFESET;
 
@@ -508,7 +513,6 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp) {
-
         // SmartDashboard.putString("drivetrain/currentState", currentState.toString());
         // SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
         // SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);

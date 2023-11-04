@@ -124,7 +124,7 @@ public class SubsystemManager {
 
 		var dt = Timer.getFPGATimestamp() - ost;
 		if(dt > .02){
-			DriverStation.reportError(String.format("Loop overrun [%s], skipping telemetry...",dt), false);
+			DriverStation.reportWarning(String.format("Loop overrun [%s], skipping telemetry...",dt), false);
 			return;
 		}
 

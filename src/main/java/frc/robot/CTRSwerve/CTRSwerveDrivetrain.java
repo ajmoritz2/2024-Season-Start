@@ -1,6 +1,7 @@
 package frc.robot.CTRSwerve;
 
 import com.ctre.phoenixpro.BaseStatusSignalValue;
+import com.ctre.phoenixpro.StatusSignalValue;
 import com.ctre.phoenixpro.hardware.Pigeon2;
 import com.pathplanner.lib.PathPlannerTrajectory;
 
@@ -179,6 +180,10 @@ public class CTRSwerveDrivetrain {
     public void resetPose(Pose2d odo) {
         m_odometry.resetPosition(Rotation2d.fromDegrees(getYaw()), getSwervePositions(), odo);
         
+    }
+
+    public boolean connectedToPigeon(){
+        return m_pigeon2.getStickyFault_Undervoltage().getValue();
     }
 
     public double getPitch(){
