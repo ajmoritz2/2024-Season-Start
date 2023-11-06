@@ -385,12 +385,14 @@ public class Arm implements Subsystem {
             if(m_controller.getR1ButtonReleased())
                 setWantedState(SystemState.NEUTRAL);
 
-            if (m_controller.getOptionsButtonPressed())
-                syncRotateMotor();
+            //BGRC - remove since CANcoder is not working
+            //if (m_controller.getOptionsButtonPressed())
+            //    syncRotateMotor();
         }
 
-		else if (m_controller.getOptionsButtonPressed())
-            zeroRotateSensor();
+		//BGRC - remove since CANcoder is not working
+        //else if (m_controller.getOptionsButtonPressed())
+        //    zeroRotateSensor();
 			
         if (m_controller.getPSButtonPressed()){
             

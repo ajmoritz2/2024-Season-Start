@@ -1,7 +1,8 @@
 package frc.robot.CTRSwerve;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenixpro.BaseStatusSignalValue;
-import com.ctre.phoenixpro.StatusSignalValue;
 import com.ctre.phoenixpro.hardware.Pigeon2;
 import com.pathplanner.lib.PathPlannerTrajectory;
 
@@ -20,6 +21,8 @@ import frc.robot.Constants;
 
 public class CTRSwerveDrivetrain {
     private final int ModuleCount;
+
+    private int seedRelativeCount = 0;
 
     private CTRSwerveModule[] m_modules;
     private Pigeon2 m_pigeon2;
@@ -183,7 +186,8 @@ public class CTRSwerveDrivetrain {
     }
 
     public boolean connectedToPigeon(){
-        return m_pigeon2.getStickyFault_Undervoltage().getValue();
+
+        return m_pigeon2.getFault_Hardware().getValue();
     }
 
     public double getPitch(){
@@ -195,6 +199,8 @@ public class CTRSwerveDrivetrain {
     }
 
     public void seedFieldRelative() {
+        seedRelativeCount++;
+        Logger.getInstance().recordOutput("SeedFieldRelativeCount", seedRelativeCount);
         m_pigeon2.setYaw(0);
     }
 

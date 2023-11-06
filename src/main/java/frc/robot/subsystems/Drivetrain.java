@@ -405,22 +405,23 @@ public class Drivetrain implements Subsystem {
             balancedX = true;
         }
 
-        if (controller.getRightBumper())
-            limelightLock = true;
-        else
-            limelightLock = false;
-
-        if (getLeftTrigger()) {
-            setWantedState(WantedState.LOCK_ROTATION);
-            lockDir = 180;
-            lockButton = true;
-        } else if (controller.getLeftBumper()) {
-            setWantedState(WantedState.LOCK_ROTATION);
-            lockDir = 360;
-            lockButton = false;
-        } else if (currentState == SystemState.LOCK_ROTATION) {
-            setWantedState(WantedState.MANUAL_CONTROL);
-        }
+        //BGRC - remove because will not use
+        // if (controller.getRightBumper())
+        //     limelightLock = true;
+        // else
+        //     limelightLock = false;
+        //
+        // if (getLeftTrigger()) {
+        //     setWantedState(WantedState.LOCK_ROTATION);
+        //     lockDir = 180;
+        //     lockButton = true;
+        // } else if (controller.getLeftBumper()) {
+        //     setWantedState(WantedState.LOCK_ROTATION);
+        //     lockDir = 360;
+        //     lockButton = false;
+        // } else if (currentState == SystemState.LOCK_ROTATION) {
+        //     setWantedState(WantedState.MANUAL_CONTROL);
+        //}
     }
 
     private double lockToPi(double value) {
@@ -513,6 +514,7 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void outputTelemetry(double timestamp) {
+
         // SmartDashboard.putString("drivetrain/currentState", currentState.toString());
         // SmartDashboard.putString("drivetrain/wantedState", wantedState.toString());
         // SmartDashboard.putBoolean("drivetrain/balancedX", balancedX);
@@ -547,7 +549,8 @@ public class Drivetrain implements Subsystem {
         // odometry.getPoseMeters().getTranslation().getX());
         // SmartDashboard.putNumber("PosY",
         // odometry.getPoseMeters().getTranslation().getY());
-        //SmartDashboard.putNumber("Yaw", getYaw().getRadians());
+        Logger.getInstance().recordOutput("Yaw", drivetrain.getYaw());
+        Logger.getInstance().recordOutput("Pose", drivetrain.getPoseMeters());
         //SmartDashboard.putNumber("Goal Angle", (getYaw().getRadians() - Math.toRadians(yawToLock)));
         //SmartDashboard.putNumber("Pitch", pitchAngle);
         //SmartDashboard.putNumber("Goal switch", lockToPi(Math.toRadians(yawToLock) + Math.PI * 2));

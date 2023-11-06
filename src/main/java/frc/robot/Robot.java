@@ -37,7 +37,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
-    Logger.getInstance().recordMetadata("2023 KARLBOT", "RUNNING TODAY"); // Set a metadata value
+    Logger.getInstance().recordMetadata("Argentina", "Main Branch"); // Set a metadata value
 
     if (isReal()) {
         Logger.getInstance().addDataReceiver(new WPILOGWriter("/media/sda1/")); // Log to a USB stick
