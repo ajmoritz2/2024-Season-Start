@@ -14,6 +14,11 @@ import frc.robot.utils.CrashTrackingRunnable;
 
 public class SubsystemManager {
 
+    /*
+     * Original Code: TEAM 27 RUSH
+     * Minor edits made by TEAM 68 T3
+     */
+
 	private final ForkJoinPool threadPool = new ForkJoinPool(3);
 	private List<Subsystem> subsystems = new ArrayList<>();
 	public final double period;
@@ -21,7 +26,9 @@ public class SubsystemManager {
 	private final Object taskRunningLock = new Object();
 	private boolean running;
 	private double timestamp = 0;
-	private double dT = 0;
+    @SuppressWarnings("unused")
+	private double dT = 0; // Can be logged later to test total loop time
+    private double pastTime = 0, currentTime = 0, wantedTime = 1;
 
 
 	public SubsystemManager(double period){
@@ -34,6 +41,12 @@ public class SubsystemManager {
 						double now = Timer.getFPGATimestamp();
 
 						ss.run();
+                        currentTime = now;
+
+                        if (currentTime-pastTime > wantedTime){
+                            ss.longRun();
+                            pastTime = currentTime;
+                        }
 
 						dT = now - timestamp;
 						timestamp = now;
@@ -124,7 +137,7 @@ public class SubsystemManager {
 
 		var dt = Timer.getFPGATimestamp() - ost;
 		if(dt > .02){
-			// DriverStation.reportWarning(String.format("Loop overrun [%s], skipping telemetry...",dt), false);
+			DriverStation.reportError(String.format("Loop overrun [%s], skipping telemetry...",dt), false);
 			return;
 		}
 
@@ -139,6 +152,20 @@ public class SubsystemManager {
 		}));
 		threadPool.awaitQuiescence(10, TimeUnit.MILLISECONDS);
 	}
+
+    public synchronized void longRun(){
+        threadPool.submit(() -> subsystems.parallelStream().forEach(subsystem -> {
+            double st = Timer.getFPGATimestamp();
+            subsystem.longLoop(timestamp);
+            double et = Timer.getFPGATimestamp();
+
+            if (et-st > 0.01) {
+                DriverStation.reportWarning("%s.longLoop took too long: %s".formatted(subsystem.getId(), et-st), false);
+            }
+        }));
+
+        threadPool.awaitQuiescence(10, TimeUnit.MILLISECONDS);
+    }
 
 	public synchronized void start() {
 		if (!running) {

@@ -23,5 +23,9 @@ public interface Subsystem extends edu.wpi.first.wpilibj2.command.Subsystem {
 	default void outputTelemetry(double timestamp){
 
 	}
+
+    default void longLoop(double timestamp) {
+        
+    }
 }
 

@@ -1,0 +1,44 @@
+{
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/LiveWindow/Ungrouped/Pigeon 2 (v6) [50]": "Gyro",
+      "/LiveWindow/Ungrouped/Talon FX (v6) [1]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX (v6) [2]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX (v6) [3]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX (v6) [4]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX (v6) [5]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX (v6) [6]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX (v6) [7]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX (v6) [8]": "Motor Controller"
+    }
+  },
+  "NetworkTables": {
+    "Retained Values": {
+      "open": false
+    },
+    "transitory": {
+      "Shuffleboard": {
+        ".recording": {
+          "open": true
+        },
+        "open": true
+      }
+    }
+  },
+  "NetworkTables View": {
+    "visible": false
+  },
+  "Plot": {
+    "Plot <0>": {
+      "plots": [
+        {
+          "height": 332
+        }
+      ],
+      "window": {
+        "visible": false
+      }
+    }
+  }
+}
